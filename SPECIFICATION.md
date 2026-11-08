@@ -216,27 +216,7 @@ TrackWise data is available through the TrackWise API (Express on Cloud Run) and
 
 Firestore REST base: `https://firestore.googleapis.com/v1/projects/{projectId}/databases/{databaseId}/documents`, with the Firebase web API key as `?key=`. Firestore rules allow public read on the dataset collections and deny all client writes; the key is restricted to the Firestore API and the app's domains and is not published in this document.
 
-## 9. Functional requirements
-
-| ID | Page | Requirement |
-| --- | --- | --- |
-| FR-01 | All | A county filter (All, Orange, Osceola, Seminole, Lake) applies to every chart on the page |
-| FR-02 | Q1, Where | Map shades each tract on a red scale by gap severity (classic darkest, then vehicle, SNAP, blind spot) |
-| FR-03 | Q1, Where | Map can switch to shading by poverty rate (0% to 40%+) |
-| FR-04 | Q1, Where | Tooltip shows tract, county, people, poverty, SNAP rate, gap types and confidence |
-| FR-05 | Q1, Where | Scorecards show gap tracts and people living in them |
-| FR-06 | Q1, Where | Table ranks gap tracts by people affected, with gap type, confidence and recommended response |
-| FR-07 | Q2, Type | Tracts and people by gap type, counting primary and secondary gaps |
-| FR-08 | Q2, Type | County × gap type matrix |
-| FR-09 | Q2, Type | Each gap type is shown with its recommended response |
-| FR-10 | Q5, Unknowns | Counts of blind spots, wide-error gap tracts and insufficient-data tracts, by county |
-| FR-11 | Q5, Unknowns | Map and list of the tracts behind those counts |
-| FR-12 | Q5, Unknowns | A fixed list of known data limits |
-| FR-13 | Scenario | Poverty and no-vehicle sliders recount gap tracts and people, and list newly flagged tracts (prototype); a fixed +10% poverty view (Looker Studio) |
-| FR-14 | All | Method and definitions are available from the report |
-| FR-15 | Report | The Looker Studio report can be shared by link and embedded in a web page |
-
-## 10. Data dictionary
+## 9. Data dictionary
 
 One row per census tract in `food_gaps_bq.csv` and the BigQuery table `hackathon.food_gaps_map`.
 
@@ -264,20 +244,7 @@ One row per census tract in `food_gaps_bq.csv` and the BigQuery table `hackathon
 | `model_gap_now`, `scenario_gap_pov10`, `scenario_new_gap_pov10`, `poverty_rate_pov10` | 0/1, % | Scenario model at baseline and with poverty +10% |
 | `tract_geom` | Geography | Tract polygon (BigQuery only) |
 
-## 11. Non-functional requirements
-
-| Area | Requirement |
-| --- | --- |
-| Access | Report shared by link; data source uses the owner's credentials so viewers need no BigQuery access |
-| Privacy | Only public, tract-level aggregates; no personal or household records |
-| Performance | Each report page loads in under 5 seconds for 490 tracts |
-| Usability | Plain-language labels; works on a laptop and on a phone |
-| Accessibility | Red scale paired with labels and tooltips, so color is never the only signal |
-| Cost | Demo runs in the BigQuery Sandbox; production uses BigQuery and Firebase with billing enabled, expected $0 per month at this volume, with a budget alert |
-| Refresh | An administrator uploads new Census and USDA files through the portal when they are published (about once a year); each upload is kept as a version |
-| Traceability | Every number in the report can be traced to a field in the dataset and a source in section 5 |
-
-## 12. Assumptions, risks and open items
+## 10. Assumptions, risks and open items
 
 | Type | Item | Impact | Mitigation |
 | --- | --- | --- | --- |
