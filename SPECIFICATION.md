@@ -2,6 +2,8 @@
 
 Freddy Vergara, Pedro Quintero, and Fabian Rico
 
+**Live app:** [trackwise-1.ai.studio](https://trackwise-1.ai.studio/)
+
 ## 1. Purpose
 
 This specification defines a decision-support solution that shows where Central Florida residents face food-access gaps, what kind of gap each area has, and how confident the analysis is. It is written for the client team that will use, approve and maintain the solution.
