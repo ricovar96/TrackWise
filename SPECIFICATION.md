@@ -166,7 +166,7 @@ Counts are by primary gap. Including secondary gaps, 108 tracts (about 697,700 p
 
 After the hackathon, a web portal replaces manual CSV handling: an administrator uploads the source files, the portal computes the gaps and writes them to BigQuery, and every application reads from there.
 
-<img width="900" height="482" alt="image" src="https://github.com/user-attachments/assets/42fca8c2-5237-4314-85d9-20e17960ac03" />
+<img width="1344" height="738" alt="TrackWise_target_architecture" src="https://github.com/user-attachments/assets/917be57f-d0c2-4011-8d2b-338ab8133c3c" />
 
 BigQuery is the single source of truth: the portal is the only component that writes, and all consumers read.
 
