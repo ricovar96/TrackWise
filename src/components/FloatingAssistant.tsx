@@ -1,17 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  MessageSquare,
-  X,
-  Send,
-  Sparkles,
-  Smile,
-  User,
-  ShieldCheck,
-  ChevronDown,
-  RotateCcw,
-  Loader2,
-  HelpCircle
-} from 'lucide-react';
+import { Loader2, Send, Smile, User, X } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ChatMessage {
   id: string;
@@ -49,7 +38,7 @@ export const FloatingAssistant: React.FC = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, []);
 
   const handleSendMessage = async (textToSend?: string) => {
     const userText = (textToSend || input).trim();
@@ -113,6 +102,7 @@ export const FloatingAssistant: React.FC = () => {
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
           className="group relative flex items-center gap-2.5 px-4 py-3 bg-[#a50f15] hover:bg-[#880d12] text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 border border-red-500/30"
           aria-label="Open Tracky Assistant"
@@ -120,9 +110,7 @@ export const FloatingAssistant: React.FC = () => {
           <div className="relative">
             <Smile className="w-5 h-5 text-amber-300" />
           </div>
-          <span className="text-xs font-bold font-serif tracking-tight pr-1">
-            Tracky
-          </span>
+          <span className="text-xs font-bold font-serif tracking-tight pr-1">Tracky</span>
         </button>
       )}
 
@@ -136,16 +124,13 @@ export const FloatingAssistant: React.FC = () => {
                 <Smile className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold font-serif text-white">
-                  Tracky
-                </h3>
-                <p className="text-[10px] text-slate-400">
-                  Your Central Florida Food Access Guide
-                </p>
+                <h3 className="text-xs font-bold font-serif text-white">Tracky</h3>
+                <p className="text-[10px] text-slate-400">Your Central Florida Food Access Guide</p>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
               className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
             >
@@ -159,10 +144,7 @@ export const FloatingAssistant: React.FC = () => {
             className="flex-1 overflow-y-auto p-3.5 space-y-3.5 text-xs bg-slate-50/50 dark:bg-slate-950/50"
           >
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+              <div key={msg.id} className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.sender === 'assistant' && (
                   <div className="w-6 h-6 rounded-lg bg-[#a50f15] text-white flex items-center justify-center shrink-0 mt-0.5">
                     <Smile className="w-3.5 h-3.5" />
@@ -176,14 +158,8 @@ export const FloatingAssistant: React.FC = () => {
                       : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-tl-xs shadow-xs'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap leading-relaxed">
-                    {msg.text}
-                  </div>
-                  <div
-                    className={`text-[9px] text-right ${
-                      msg.sender === 'user' ? 'text-red-200' : 'text-slate-400'
-                    }`}
-                  >
+                  <div className="whitespace-pre-wrap leading-relaxed">{msg.text}</div>
+                  <div className={`text-[9px] text-right ${msg.sender === 'user' ? 'text-red-200' : 'text-slate-400'}`}>
                     {msg.timestamp}
                   </div>
                 </div>
@@ -216,9 +192,10 @@ export const FloatingAssistant: React.FC = () => {
             <span className="text-[10px] font-semibold text-slate-400 shrink-0 uppercase tracking-wider pl-1">
               Ask:
             </span>
-            {QUICK_QUESTIONS.map((q, idx) => (
+            {QUICK_QUESTIONS.map((q) => (
               <button
-                key={idx}
+                type="button"
+                key={q}
                 onClick={() => handleSendMessage(q)}
                 disabled={isLoading}
                 className="px-2.5 py-1 text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-[#a50f15] dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full whitespace-nowrap shrink-0 transition-colors border border-slate-200/80 dark:border-slate-700"
@@ -242,6 +219,7 @@ export const FloatingAssistant: React.FC = () => {
               className="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#a50f15]"
             />
             <button
+              type="button"
               onClick={() => handleSendMessage()}
               disabled={!input.trim() || isLoading}
               className="p-2 bg-[#a50f15] hover:bg-[#880d12] disabled:opacity-40 text-white rounded-xl transition-colors shrink-0 shadow-xs"

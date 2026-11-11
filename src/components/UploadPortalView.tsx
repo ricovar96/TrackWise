@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { CheckCircle, Database, Download, Play } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 import { REQUIRED_SCHEMAS } from '../services/foodGapEngine';
-import { UploadCloud, CheckCircle, AlertCircle, Play, FileSpreadsheet, RefreshCw, Download, Database, Lock } from 'lucide-react';
 
 export const UploadPortalView: React.FC = () => {
   const [userRole, setUserRole] = useState<'uploader' | 'viewer'>('uploader');
@@ -14,7 +15,9 @@ export const UploadPortalView: React.FC = () => {
     '[2026-11-07 12:43:51] Status: READY. Version tagged and published to BigQuery table hackathon.food_gaps_map',
   ]);
 
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string; size: string; status: 'valid' | 'missing' }>>({
+  const [uploadedFiles, _setUploadedFiles] = useState<
+    Record<string, { name: string; size: string; status: 'valid' | 'missing' }>
+  >({
     s1701: { name: 'ACSST5Y2024.S1701-Data.csv', size: '1.7 MB', status: 'valid' },
     s2201: { name: 'ACSST5Y2024.S2201-Data.csv', size: '2.1 MB', status: 'valid' },
     s0101: { name: 'ACSST5Y2024.S0101-Data.csv', size: '2.0 MB', status: 'valid' },
@@ -26,7 +29,10 @@ export const UploadPortalView: React.FC = () => {
 
   const handleSimulateRecompute = () => {
     setEngineStatus('processing');
-    const newLogs = [...logs, `[${new Date().toLocaleTimeString()}] Manual trigger: Re-computing gap engine for upload #CF-2026-11-B...`];
+    const newLogs = [
+      ...logs,
+      `[${new Date().toLocaleTimeString()}] Manual trigger: Re-computing gap engine for upload #CF-2026-11-B...`,
+    ];
     setLogs(newLogs);
 
     setTimeout(() => {
@@ -54,7 +60,9 @@ export const UploadPortalView: React.FC = () => {
               </h2>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
-              When new Census and USDA annual data is published, administrators upload the 7 source files here. The portal validates column headers, executes the gap engine (<code>foodGapEngine.js</code>), versions the output, and writes to BigQuery.
+              When new Census and USDA annual data is published, administrators upload the 7 source files here. The
+              portal validates column headers, executes the gap engine (<code>foodGapEngine.js</code>), versions the
+              output, and writes to BigQuery.
             </p>
           </div>
 
@@ -63,6 +71,7 @@ export const UploadPortalView: React.FC = () => {
             <span className="text-slate-500">Active Role:</span>
             <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <button
+                type="button"
                 onClick={() => setUserRole('uploader')}
                 className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                   userRole === 'uploader'
@@ -73,6 +82,7 @@ export const UploadPortalView: React.FC = () => {
                 Uploader (Admin)
               </button>
               <button
+                type="button"
                 onClick={() => setUserRole('viewer')}
                 className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                   userRole === 'viewer'
@@ -101,6 +111,7 @@ export const UploadPortalView: React.FC = () => {
 
           {userRole === 'uploader' && (
             <button
+              type="button"
               onClick={handleSimulateRecompute}
               disabled={engineStatus === 'processing'}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-xs disabled:opacity-50"
@@ -124,9 +135,7 @@ export const UploadPortalView: React.FC = () => {
                     <CheckCircle className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">
-                      {schema.label}
-                    </div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">{schema.label}</div>
                     <div className="text-[11px] text-slate-500 font-mono">
                       {fileInfo ? `${fileInfo.name} (${fileInfo.size})` : 'Missing file'}
                     </div>
@@ -141,9 +150,7 @@ export const UploadPortalView: React.FC = () => {
                       {schema.requiredCols.length > 3 ? ` +${schema.requiredCols.length - 3} more` : ''}
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Valid Schema
-                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Valid Schema</span>
                 </div>
               </div>
             );
@@ -155,9 +162,7 @@ export const UploadPortalView: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Gap Engine Pipeline Status
-            </h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Gap Engine Pipeline Status</h3>
             <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               ● READY (Upload #CF-2026-11-A)
             </span>

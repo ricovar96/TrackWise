@@ -1,30 +1,22 @@
-import React, { useState, useMemo } from 'react';
-import { TractData, RetailerData, ChurchData, SchoolData, CountyFilter, ShadingMode } from '../types';
-import { MapGoogle } from './MapGoogle';
-import { MapLeaflet } from './MapLeaflet';
-import { runScenarioModel, runSensitivityTest } from '../services/foodGapEngine';
 import {
-  Map as MapIcon,
-  Search,
-  RotateCcw,
-  AlertTriangle,
+  Activity,
   ChevronDown,
   ChevronUp,
-  Info,
-  Car,
-  ShoppingBag,
-  Users,
-  CheckCircle2,
-  ExternalLink,
-  ChevronRight,
-  Store,
-  Eye,
-  Sliders,
   HelpCircle,
-  FileText,
+  Info,
+  Map as MapIcon,
+  RotateCcw,
+  Search,
   ShieldCheck,
-  Activity
+  Sliders,
 } from 'lucide-react';
+import type React from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { runScenarioModel, runSensitivityTest } from '../services/foodGapEngine';
+import type { ChurchData, CountyFilter, RetailerData, SchoolData, ShadingMode, TractData } from '../types';
+
+const MapGoogle = lazy(() => import('./MapGoogle').then((m) => ({ default: m.MapGoogle })));
+const MapLeaflet = lazy(() => import('./MapLeaflet').then((m) => ({ default: m.MapLeaflet })));
 
 interface DashboardStoryReportProps {
   tracts: TractData[];
@@ -227,7 +219,11 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
   // Section 1: Gap tracts sorted by population (largest first)
   const gapTractsList = useMemo(() => {
     return filteredTracts
-      .filter((t) => t.has_gap === 1 || ['Classic food desert', 'Vehicle-compounded gap', 'SNAP enrollment gap'].includes(t.primary_gap))
+      .filter(
+        (t) =>
+          t.has_gap === 1 ||
+          ['Classic food desert', 'Vehicle-compounded gap', 'SNAP enrollment gap'].includes(t.primary_gap),
+      )
       .filter((t) => {
         if (!gapSearchTerm.trim()) return true;
         const q = gapSearchTerm.toLowerCase();
@@ -317,7 +313,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           <strong className="font-semibold text-slate-900 dark:text-white tabular-nums">
             {currentCountyStats.gapTracts}
           </strong>{' '}
-          census tracts with a food access gap {currentCountyStats.headlineLocation}. Each gap type points to a different kind of help.
+          census tracts with a food access gap {currentCountyStats.headlineLocation}. Each gap type points to a
+          different kind of help.
         </p>
       </section>
 
@@ -326,14 +323,13 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           ========================================================================= */}
       <div className="sticky top-[57px] z-30 -mx-4 md:-mx-6 px-4 md:px-6 py-2.5 bg-[#f8f9fa]/95 dark:bg-slate-950/95 backdrop-blur-md border-y border-slate-200/90 dark:border-slate-800 transition-colors">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-2 shrink-0">
-            County filter:
-          </span>
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-2 shrink-0">County filter:</span>
           {countyOrder.map((c) => {
             const isActive = selectedCounty === c;
             const data = CANONICAL_COUNTY_DATA[c];
             return (
               <button
+                type="button"
                 key={c}
                 onClick={() => onSelectCounty(c)}
                 className={`px-3.5 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-all ${
@@ -396,6 +392,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
               {/* Map Engine Toggle */}
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs">
                 <button
+                  type="button"
                   onClick={() => setMapEngine('google')}
                   className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
                     mapEngine === 'google'
@@ -406,6 +403,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                   Google Maps
                 </button>
                 <button
+                  type="button"
                   onClick={() => setMapEngine('leaflet')}
                   className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
                     mapEngine === 'leaflet'
@@ -480,34 +478,42 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
 
           {/* Interactive Map Viewport */}
           <div className="h-[520px] w-full relative">
-            {mapEngine === 'google' ? (
-              <MapGoogle
-                tracts={filteredTracts}
-                retailers={filteredRetailers}
-                churches={filteredChurches}
-                schools={filteredSchools}
-                selectedCounty={selectedCounty}
-                selectedTract={selectedTract}
-                onSelectTract={onSelectTract}
-                shadingMode={colorBy}
-                setShadingMode={setColorBy}
-                isDark={isDark}
-                onSwitchToLeaflet={() => setMapEngine('leaflet')}
-              />
-            ) : (
-              <MapLeaflet
-                tracts={filteredTracts}
-                retailers={filteredRetailers}
-                churches={filteredChurches}
-                schools={filteredSchools}
-                selectedCounty={selectedCounty}
-                selectedTract={selectedTract}
-                onSelectTract={onSelectTract}
-                shadingMode={colorBy}
-                setShadingMode={setColorBy}
-                isDark={isDark}
-              />
-            )}
+            <Suspense
+              fallback={
+                <div role="status" className="p-6 text-sm text-slate-500">
+                  Loading map…
+                </div>
+              }
+            >
+              {mapEngine === 'google' ? (
+                <MapGoogle
+                  tracts={filteredTracts}
+                  retailers={filteredRetailers}
+                  churches={filteredChurches}
+                  schools={filteredSchools}
+                  selectedCounty={selectedCounty}
+                  selectedTract={selectedTract}
+                  onSelectTract={onSelectTract}
+                  shadingMode={colorBy}
+                  setShadingMode={setColorBy}
+                  isDark={isDark}
+                  onSwitchToLeaflet={() => setMapEngine('leaflet')}
+                />
+              ) : (
+                <MapLeaflet
+                  tracts={filteredTracts}
+                  retailers={filteredRetailers}
+                  churches={filteredChurches}
+                  schools={filteredSchools}
+                  selectedCounty={selectedCounty}
+                  selectedTract={selectedTract}
+                  onSelectTract={onSelectTract}
+                  shadingMode={colorBy}
+                  setShadingMode={setColorBy}
+                  isDark={isDark}
+                />
+              )}
+            </Suspense>
           </div>
         </div>
 
@@ -526,7 +532,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                   </span>
                 </h3>
                 <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">
-                  Every census tract is assigned to a mutually exclusive category, including high-access areas where no gap was identified.
+                  Every census tract is assigned to a mutually exclusive category, including high-access areas where no
+                  gap was identified.
                 </p>
               </div>
             </div>
@@ -534,34 +541,68 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 mt-3 pt-3 border-t border-emerald-200/70 dark:border-emerald-800/50 text-xs">
             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Classic Food Desert</span>
-              <span className="text-base font-bold text-[#991b1b] dark:text-red-400 font-mono tabular-nums">{complete490Breakdown.classic}</span>
-              <span className="text-[10px] text-slate-400 block font-mono">({Math.round((complete490Breakdown.classic / complete490Breakdown.total) * 1000) / 10}%)</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">
+                Classic Food Desert
+              </span>
+              <span className="text-base font-bold text-[#991b1b] dark:text-red-400 font-mono tabular-nums">
+                {complete490Breakdown.classic}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono">
+                ({Math.round((complete490Breakdown.classic / complete490Breakdown.total) * 1000) / 10}%)
+              </span>
             </div>
             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Vehicle Gap</span>
-              <span className="text-base font-bold text-[#dc2626] dark:text-red-400 font-mono tabular-nums">{complete490Breakdown.vehicle}</span>
-              <span className="text-[10px] text-slate-400 block font-mono">({Math.round((complete490Breakdown.vehicle / complete490Breakdown.total) * 1000) / 10}%)</span>
+              <span className="text-base font-bold text-[#dc2626] dark:text-red-400 font-mono tabular-nums">
+                {complete490Breakdown.vehicle}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono">
+                ({Math.round((complete490Breakdown.vehicle / complete490Breakdown.total) * 1000) / 10}%)
+              </span>
             </div>
             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">SNAP Enrollment Gap</span>
-              <span className="text-base font-bold text-[#f87171] dark:text-red-400 font-mono tabular-nums">{complete490Breakdown.snap}</span>
-              <span className="text-[10px] text-slate-400 block font-mono">({Math.round((complete490Breakdown.snap / complete490Breakdown.total) * 1000) / 10}%)</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">
+                SNAP Enrollment Gap
+              </span>
+              <span className="text-base font-bold text-[#f87171] dark:text-red-400 font-mono tabular-nums">
+                {complete490Breakdown.snap}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono">
+                ({Math.round((complete490Breakdown.snap / complete490Breakdown.total) * 1000) / 10}%)
+              </span>
             </div>
             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Possible Blind Spot</span>
-              <span className="text-base font-bold text-amber-600 dark:text-amber-400 font-mono tabular-nums">{complete490Breakdown.blindSpot}</span>
-              <span className="text-[10px] text-slate-400 block font-mono">({Math.round((complete490Breakdown.blindSpot / complete490Breakdown.total) * 1000) / 10}%)</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">
+                Possible Blind Spot
+              </span>
+              <span className="text-base font-bold text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+                {complete490Breakdown.blindSpot}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono">
+                ({Math.round((complete490Breakdown.blindSpot / complete490Breakdown.total) * 1000) / 10}%)
+              </span>
             </div>
             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Insufficient Data</span>
-              <span className="text-base font-bold text-slate-600 dark:text-slate-400 font-mono tabular-nums">{complete490Breakdown.insufficientData}</span>
-              <span className="text-[10px] text-slate-400 block font-mono">({Math.round((complete490Breakdown.insufficientData / complete490Breakdown.total) * 1000) / 10}%)</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">
+                Insufficient Data
+              </span>
+              <span className="text-base font-bold text-slate-600 dark:text-slate-400 font-mono tabular-nums">
+                {complete490Breakdown.insufficientData}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono">
+                ({Math.round((complete490Breakdown.insufficientData / complete490Breakdown.total) * 1000) / 10}%)
+              </span>
             </div>
             <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-lg border border-emerald-200 dark:border-emerald-700">
-              <span className="text-[10px] text-emerald-800 dark:text-emerald-300 block font-semibold">No Gap Identified</span>
-              <span className="text-base font-bold text-emerald-700 dark:text-emerald-300 font-mono tabular-nums">{complete490Breakdown.noGap}</span>
-              <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400 block font-mono">({Math.round((complete490Breakdown.noGap / complete490Breakdown.total) * 1000) / 10}%)</span>
+              <span className="text-[10px] text-emerald-800 dark:text-emerald-300 block font-semibold">
+                No Gap Identified
+              </span>
+              <span className="text-base font-bold text-emerald-700 dark:text-emerald-300 font-mono tabular-nums">
+                {complete490Breakdown.noGap}
+              </span>
+              <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400 block font-mono">
+                ({Math.round((complete490Breakdown.noGap / complete490Breakdown.total) * 1000) / 10}%)
+              </span>
             </div>
           </div>
         </div>
@@ -626,9 +667,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                         <td className="py-2.5 px-4 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
                           {t.tract_name}
                         </td>
-                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                          {t.county}
-                        </td>
+                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{t.county}</td>
                         <td className="py-2.5 px-3 text-right font-mono font-semibold tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap">
                           {t.population.toLocaleString()}
                         </td>
@@ -645,26 +684,24 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                                 t.primary_gap === 'Classic food desert'
                                   ? 'bg-[#991b1b]'
                                   : t.primary_gap === 'Vehicle-compounded gap'
-                                  ? 'bg-[#dc2626]'
-                                  : t.primary_gap === 'SNAP enrollment gap'
-                                  ? 'bg-[#f87171]'
-                                  : 'bg-slate-400'
+                                    ? 'bg-[#dc2626]'
+                                    : t.primary_gap === 'SNAP enrollment gap'
+                                      ? 'bg-[#f87171]'
+                                      : 'bg-slate-400'
                               }`}
                             />
                             <span>{t.primary_gap}</span>
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
-                          {t.secondary_gap || '—'}
-                        </td>
+                        <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">{t.secondary_gap || '—'}</td>
                         <td className="py-2.5 px-3 whitespace-nowrap">
                           <span
                             className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${
                               t.confidence === 'High'
                                 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                                 : t.confidence === 'Medium'
-                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                           >
                             {t.confidence}
@@ -703,9 +740,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#991b1b] shrink-0" />
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">
-                  Classic food desert
-                </h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Classic food desert</h3>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 High poverty and far from a SNAP-authorized store.
@@ -767,9 +802,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#dc2626] shrink-0" />
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">
-                  Vehicle-compounded gap
-                </h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Vehicle-compounded gap</h3>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Many households without a car live far from a SNAP store.
@@ -831,9 +864,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#f87171] shrink-0" />
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">
-                  SNAP enrollment gap
-                </h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">SNAP enrollment gap</h3>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 High poverty but low SNAP use, so eligible households may not be enrolled.
@@ -894,9 +925,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
         {/* Table: Gap type by county */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors">
           <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Gap type by county
-            </h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Gap type by county</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Primary gap classifications across Central Florida counties (spec v1.1).
             </p>
@@ -948,9 +977,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                   className={`cursor-pointer ${selectedCounty === 'All' ? 'bg-red-50/70 dark:bg-red-950/30 border-l-4 border-l-[#a50f15]' : ''}`}
                 >
                   <td className="py-2.5 px-4 font-serif">Total (All Central Florida)</td>
-                  <td className="py-2.5 px-4 text-right font-mono tabular-nums">
-                    {CANONICAL_COUNTY_DATA.All.classic}
-                  </td>
+                  <td className="py-2.5 px-4 text-right font-mono tabular-nums">{CANONICAL_COUNTY_DATA.All.classic}</td>
                   <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                     {CANONICAL_COUNTY_DATA.All.vehiclePrimary}
                   </td>
@@ -986,9 +1013,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
         {/* Four stat tiles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              Possible blind spots
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">Possible blind spots</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-slate-900 dark:text-slate-100">
               {currentCountyStats.blindSpots}
             </div>
@@ -998,9 +1023,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              People in blind spots
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">People in blind spots</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-slate-900 dark:text-slate-100">
               ~{currentCountyStats.blindSpotPop.toLocaleString()}
             </div>
@@ -1010,9 +1033,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              Gap tracts with uncertain estimates
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">Gap tracts with uncertain estimates</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-slate-900 dark:text-slate-100">
               {currentCountyStats.uncertainEstimates}
             </div>
@@ -1022,9 +1043,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              Tracts not evaluated
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">Tracts not evaluated</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-slate-900 dark:text-slate-100">
               {currentCountyStats.notEvaluated}
             </div>
@@ -1037,9 +1056,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
         {/* Table: What we do not know, by county */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors">
           <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              What we do not know, by county
-            </h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">What we do not know, by county</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Breakdown of uncertainty indicators across the four Central Florida counties.
             </p>
@@ -1072,7 +1089,9 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                     >
                       <td className="py-2.5 px-4 font-medium">{c} County</td>
                       <td className="py-2.5 px-4 text-right font-mono tabular-nums">{data.blindSpots}</td>
-                      <td className="py-2.5 px-4 text-right font-mono tabular-nums">~{data.blindSpotPop.toLocaleString()}</td>
+                      <td className="py-2.5 px-4 text-right font-mono tabular-nums">
+                        ~{data.blindSpotPop.toLocaleString()}
+                      </td>
                       <td className="py-2.5 px-4 text-right font-mono tabular-nums">{data.uncertainEstimates}</td>
                       <td className="py-2.5 px-4 text-right font-mono tabular-nums">{data.notEvaluated}</td>
                     </tr>
@@ -1112,7 +1131,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 <span>Confidence Scoring Rationale &amp; Margin of Error (MOE) Parameters</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Technical explanation of Census ACS margin-of-error benchmarks, population stability cutoffs, and SNAP MOE integration.
+                Technical explanation of Census ACS margin-of-error benchmarks, population stability cutoffs, and SNAP
+                MOE integration.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -1132,7 +1152,9 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 <span>Poverty MOE (&le; 30%)</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                <strong>Why 30%?</strong> The U.S. Census Bureau considers a relative margin of error (MOE / estimate) &le; 30% as statistically reliable for small area estimates. MOE &gt; 50% triggers an uncertainty warning.
+                <strong>Why 30%?</strong> The U.S. Census Bureau considers a relative margin of error (MOE / estimate)
+                &le; 30% as statistically reliable for small area estimates. MOE &gt; 50% triggers an uncertainty
+                warning.
               </p>
             </div>
 
@@ -1142,7 +1164,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 <span>SNAP MOE Integration</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                <strong>Why SNAP MOE?</strong> SNAP participation from ACS S2201 carries its own sampling error. Evaluated alongside poverty MOE to confirm whether low SNAP rates reflect true under-enrollment.
+                <strong>Why SNAP MOE?</strong> SNAP participation from ACS S2201 carries its own sampling error.
+                Evaluated alongside poverty MOE to confirm whether low SNAP rates reflect true under-enrollment.
               </p>
             </div>
 
@@ -1152,7 +1175,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 <span>Population (&ge; 2,500)</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                <strong>Why 2,500 pop?</strong> Central Florida tracts average ~4,500 residents. Tracts under 2,500 have small sample bases in Census ACS, leading to volatile year-over-year rate swings.
+                <strong>Why 2,500 pop?</strong> Central Florida tracts average ~4,500 residents. Tracts under 2,500 have
+                small sample bases in Census ACS, leading to volatile year-over-year rate swings.
               </p>
             </div>
 
@@ -1162,7 +1186,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 <span>Secondary Corroboration</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                <strong>Why multi-gap?</strong> Awarded +1 point when a secondary gap classification (e.g. Vehicle gap alongside Classic desert) reinforces multi-dimensional need across indicators.
+                <strong>Why multi-gap?</strong> Awarded +1 point when a secondary gap classification (e.g. Vehicle gap
+                alongside Classic desert) reinforces multi-dimensional need across indicators.
               </p>
             </div>
           </div>
@@ -1184,31 +1209,36 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#a50f15] mt-1.5 shrink-0" />
                 <span>
-                  <strong>No CDC transportation data for Central Florida:</strong> The CDC PLACES transport measures are blank for these four counties, so USDA households without a vehicle are used instead.
+                  <strong>No CDC transportation data for Central Florida:</strong> The CDC PLACES transport measures are
+                  blank for these four counties, so USDA households without a vehicle are used instead.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#a50f15] mt-1.5 shrink-0" />
                 <span>
-                  <strong>Distances are straight-line:</strong> Euclidean distance does not capture driving routes, transit availability, or physical barriers like highways (I-4, SR-408) and lakes.
+                  <strong>Distances are straight-line:</strong> Euclidean distance does not capture driving routes,
+                  transit availability, or physical barriers like highways (I-4, SR-408) and lakes.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#a50f15] mt-1.5 shrink-0" />
                 <span>
-                  <strong>Census survey margins of error:</strong> ACS figures are 5-year sample estimates that carry wide margins of error in small residential tracts (e.g. MOE &gt; 30% of estimate).
+                  <strong>Census survey margins of error:</strong> ACS figures are 5-year sample estimates that carry
+                  wide margins of error in small residential tracts (e.g. MOE &gt; 30% of estimate).
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#a50f15] mt-1.5 shrink-0" />
                 <span>
-                  <strong>Pantry and food bank locations are not in the data:</strong> Only SNAP-authorized retail stores are recorded; informal food distribution networks are not reflected.
+                  <strong>Pantry and food bank locations are not in the data:</strong> Only SNAP-authorized retail
+                  stores are recorded; informal food distribution networks are not reflected.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#a50f15] mt-1.5 shrink-0" />
                 <span>
-                  <strong>Low SNAP use has multiple meanings:</strong> A low SNAP participation rate can reflect lower need rather than under-enrollment; local outreach verification is needed before acting.
+                  <strong>Low SNAP use has multiple meanings:</strong> A low SNAP participation rate can reflect lower
+                  need rather than under-enrollment; local outreach verification is needed before acting.
                 </span>
               </li>
             </ul>
@@ -1219,9 +1249,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center justify-between">
                 <span>Blind spots to review</span>
-                <span className="text-xs font-mono font-normal text-slate-500">
-                  {blindSpotsList.length} tracts
-                </span>
+                <span className="text-xs font-mono font-normal text-slate-500">{blindSpotsList.length} tracts</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Elevated need across multiple signals; sorted by population (largest first).
@@ -1284,9 +1312,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-slate-50 tracking-tight">
             4. Looking ahead
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            A what-if scenario, not a forecast.
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">A what-if scenario, not a forecast.</p>
         </div>
 
         {/* Card with two sliders + Reset button */}
@@ -1298,6 +1324,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             </h3>
 
             <button
+              type="button"
               onClick={handleResetScenario}
               className="flex items-center gap-1.5 self-start sm:self-auto px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
@@ -1310,9 +1337,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             {/* Slider 1: Poverty rate change */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-700 dark:text-slate-300">
-                  Poverty rate change
-                </span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">Poverty rate change</span>
                 <span className="font-mono font-bold text-sm text-[#a50f15] dark:text-red-400 tabular-nums">
                   {povertyDeltaPct > 0 ? `+${povertyDeltaPct}%` : `${povertyDeltaPct}%`}
                 </span>
@@ -1337,9 +1362,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             {/* Slider 2: Households without a car change */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-700 dark:text-slate-300">
-                  Households without a car change
-                </span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">Households without a car change</span>
                 <span className="font-mono font-bold text-sm text-[#a50f15] dark:text-red-400 tabular-nums">
                   {vehicleDeltaPct > 0 ? `+${vehicleDeltaPct}%` : `${vehicleDeltaPct}%`}
                 </span>
@@ -1366,18 +1389,14 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
         {/* Four stat tiles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              Tracts with a food gap
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">Tracts with a food gap</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-slate-900 dark:text-slate-100">
-              {currentCountyStats.gapTracts}{' '}
-              <span className="text-sm font-sans font-normal text-slate-400">→</span>{' '}
+              {currentCountyStats.gapTracts} <span className="text-sm font-sans font-normal text-slate-400">→</span>{' '}
               <span className="text-[#a50f15] dark:text-red-400">
                 {selectedCounty === 'All'
                   ? scenarioResult.gapTractsCount
-                  : scenarioResult.tractsWithScenario.filter(
-                      (t) => t.county === selectedCounty && t.isScenarioGap
-                    ).length}
+                  : scenarioResult.tractsWithScenario.filter((t) => t.county === selectedCounty && t.isScenarioGap)
+                      .length}
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -1386,9 +1405,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              People living in gap tracts
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">People living in gap tracts</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-slate-900 dark:text-slate-100">
               {selectedCounty === 'All'
                 ? scenarioResult.gapPopulation.toLocaleString()
@@ -1403,9 +1420,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              Newly at-risk tracts
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">Newly at-risk tracts</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-[#a50f15] dark:text-red-400">
               +{newlyAtRiskTracts.length}
             </div>
@@ -1415,9 +1430,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 shadow-xs transition-colors">
-            <span className="text-xs font-medium text-slate-500 block mb-1">
-              People in newly at-risk tracts
-            </span>
+            <span className="text-xs font-medium text-slate-500 block mb-1">People in newly at-risk tracts</span>
             <div className="text-2xl sm:text-3xl font-serif font-bold tabular-nums text-[#a50f15] dark:text-red-400">
               +{newlyAtRiskTracts.reduce((s, t) => s + t.population, 0).toLocaleString()}
             </div>
@@ -1432,9 +1445,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           {/* Card: Tracts with a gap by county (horizontal paired bars) */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-5 shadow-xs transition-colors space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Tracts with a gap by county
-              </h3>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tracts with a gap by county</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Horizontal paired comparison: today in grey vs scenario in dark red.
               </p>
@@ -1444,7 +1455,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
               {(['Orange', 'Osceola', 'Lake', 'Seminole'] as const).map((c) => {
                 const baseCount = CANONICAL_COUNTY_DATA[c].gapTracts;
                 const scenarioCount = scenarioResult.tractsWithScenario.filter(
-                  (t) => t.county === c && t.isScenarioGap
+                  (t) => t.county === c && t.isScenarioGap,
                 ).length;
                 const maxVal = Math.max(120, scenarioCount, baseCount);
                 const basePct = (baseCount / maxVal) * 100;
@@ -1460,11 +1471,10 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">
-                        {c} County
-                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{c} County</span>
                       <span className="font-mono font-medium text-slate-600 dark:text-slate-400 tabular-nums">
-                        {baseCount} today → <strong className="text-[#a50f15] dark:text-red-400">{scenarioCount}</strong> scenario
+                        {baseCount} today →{' '}
+                        <strong className="text-[#a50f15] dark:text-red-400">{scenarioCount}</strong> scenario
                       </span>
                     </div>
 
@@ -1506,9 +1516,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center justify-between">
                 <span>Newly at-risk tracts</span>
-                <span className="text-xs font-mono font-normal text-slate-500">
-                  {newlyAtRiskTracts.length} tracts
-                </span>
+                <span className="text-xs font-mono font-normal text-slate-500">{newlyAtRiskTracts.length} tracts</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Tracts crossing gap threshold under scenario; sorted by population.
@@ -1535,8 +1543,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                     </tr>
                   ) : (
                     newlyAtRiskTracts.map((t) => {
-                      const projPov =
-                        t.poverty_rate !== null ? t.poverty_rate * (1 + povertyDeltaPct / 100) : null;
+                      const projPov = t.poverty_rate !== null ? t.poverty_rate * (1 + povertyDeltaPct / 100) : null;
                       return (
                         <tr
                           key={t.GEOID}
@@ -1557,8 +1564,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                             {t.lila_flag === 1
                               ? 'Classic food desert'
                               : t.low_access_flag === 1
-                              ? 'Vehicle-compounded gap'
-                              : 'SNAP enrollment gap'}
+                                ? 'Vehicle-compounded gap'
+                                : 'SNAP enrollment gap'}
                           </td>
                         </tr>
                       );
@@ -1579,7 +1586,8 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 <span>Threshold Sensitivity &amp; Classification Stability Analysis</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Tests how robust classifications are when regional quartile cutoffs (75th percentile) are shifted by small increments.
+                Tests how robust classifications are when regional quartile cutoffs (75th percentile) are shifted by
+                small increments.
               </p>
             </div>
 
@@ -1588,6 +1596,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
               <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 px-1.5">Shift Cutoffs:</span>
               {[-10, -5, 0, 5, 10].map((shift) => (
                 <button
+                  type="button"
                   key={shift}
                   onClick={() => setSensitivityShiftPct(shift)}
                   className={`px-2.5 py-1 rounded-md font-mono font-medium transition-colors ${
@@ -1605,12 +1614,15 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           {/* Stability Score Meter & Summary Tiles */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
             <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/60 space-y-1">
-              <span className="text-[11px] font-medium text-emerald-900 dark:text-emerald-300 block">Classification Stability</span>
+              <span className="text-[11px] font-medium text-emerald-900 dark:text-emerald-300 block">
+                Classification Stability
+              </span>
               <div className="text-2xl font-serif font-bold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums">
                 {sensitivityResult.stabilityPercentage}%
               </div>
               <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
-                {sensitivityResult.stableTractsCount} of {filteredTracts.length} tracts remain unchanged under a {sensitivityShiftPct > 0 ? `+${sensitivityShiftPct}%` : `${sensitivityShiftPct}%`} shift
+                {sensitivityResult.stableTractsCount} of {filteredTracts.length} tracts remain unchanged under a{' '}
+                {sensitivityShiftPct > 0 ? `+${sensitivityShiftPct}%` : `${sensitivityShiftPct}%`} shift
               </p>
             </div>
 
@@ -1627,7 +1639,10 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
               <div className="text-2xl font-serif font-bold text-[#a50f15] dark:text-red-400 font-mono tabular-nums">
                 {sensitivityResult.shiftedGapCount}
               </div>
-              <p className="text-[11px] text-slate-500">Gaps under {sensitivityShiftPct > 0 ? `+${sensitivityShiftPct}%` : `${sensitivityShiftPct}%`} cutoff tweak</p>
+              <p className="text-[11px] text-slate-500">
+                Gaps under {sensitivityShiftPct > 0 ? `+${sensitivityShiftPct}%` : `${sensitivityShiftPct}%`} cutoff
+                tweak
+              </p>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
@@ -1643,7 +1658,11 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
           {sensitivityResult.changedTracts.length > 0 && (
             <div className="space-y-2 pt-2">
               <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <span>Boundary Tracts Shifting Under {sensitivityShiftPct > 0 ? `+${sensitivityShiftPct}%` : `${sensitivityShiftPct}%`} Cutoff Tweak ({sensitivityResult.changedTracts.length})</span>
+                <span>
+                  Boundary Tracts Shifting Under{' '}
+                  {sensitivityShiftPct > 0 ? `+${sensitivityShiftPct}%` : `${sensitivityShiftPct}%`} Cutoff Tweak (
+                  {sensitivityResult.changedTracts.length})
+                </span>
               </h4>
               <div className="overflow-x-auto max-h-[220px] overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-lg">
                 <table className="w-full text-left text-xs">
@@ -1661,7 +1680,9 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                       <tr key={tract.GEOID} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                         <td className="py-2 px-3 font-medium text-slate-900 dark:text-slate-100">{tract.tract_name}</td>
                         <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{tract.county}</td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums">{tract.population.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums">
+                          {tract.population.toLocaleString()}
+                        </td>
                         <td className="py-2 px-3 font-medium">{baselineGap}</td>
                         <td className="py-2 px-3 font-semibold text-[#a50f15] dark:text-red-400">{shiftedGap}</td>
                       </tr>
@@ -1680,6 +1701,7 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
       <section className="pt-4 border-t border-slate-200 dark:border-slate-800">
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors">
           <button
+            type="button"
             onClick={() => setIsRulesExpanded(!isRulesExpanded)}
             className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
           >
@@ -1708,43 +1730,40 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                       Quartiles within the 490 tracts:
                     </strong>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                      All 490 Central Florida census tracts are ranked against each other (Q1 lowest to Q4 highest) for poverty rate, SNAP participation, and no-vehicle low-access share.
+                      All 490 Central Florida census tracts are ranked against each other (Q1 lowest to Q4 highest) for
+                      poverty rate, SNAP participation, and no-vehicle low-access share.
                     </p>
                   </div>
 
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1">
-                    <strong className="text-slate-900 dark:text-slate-100 block">
-                      Classic food desert:
-                    </strong>
+                    <strong className="text-slate-900 dark:text-slate-100 block">Classic food desert:</strong>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Poverty rate in Q4 (top 25% highest poverty in the region) AND USDA low-income/low-access flag = 1 (&gt;1 mile urban or &gt;10 miles rural from nearest supermarket).
+                      Poverty rate in Q4 (top 25% highest poverty in the region) AND USDA low-income/low-access flag = 1
+                      (&gt;1 mile urban or &gt;10 miles rural from nearest supermarket).
                     </p>
                   </div>
 
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1">
-                    <strong className="text-slate-900 dark:text-slate-100 block">
-                      Vehicle-compounded gap:
-                    </strong>
+                    <strong className="text-slate-900 dark:text-slate-100 block">Vehicle-compounded gap:</strong>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                      USDA low-access flag = 1 AND (USDA no-vehicle low-access flag = 1 or no-vehicle low-access share in Q4).
+                      USDA low-access flag = 1 AND (USDA no-vehicle low-access flag = 1 or no-vehicle low-access share
+                      in Q4).
                     </p>
                   </div>
 
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1">
-                    <strong className="text-slate-900 dark:text-slate-100 block">
-                      SNAP enrollment gap:
-                    </strong>
+                    <strong className="text-slate-900 dark:text-slate-100 block">SNAP enrollment gap:</strong>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Poverty rate in Q4 AND SNAP participation rate in Q1 or Q2 (bottom 50% participation despite high poverty).
+                      Poverty rate in Q4 AND SNAP participation rate in Q1 or Q2 (bottom 50% participation despite high
+                      poverty).
                     </p>
                   </div>
 
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1">
-                    <strong className="text-slate-900 dark:text-slate-100 block">
-                      Possible blind spot:
-                    </strong>
+                    <strong className="text-slate-900 dark:text-slate-100 block">Possible blind spot:</strong>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                      No measure in Q4, but two or more of poverty, SNAP, and no-vehicle share in Q3 (moderate elevated need across multiple signals).
+                      No measure in Q4, but two or more of poverty, SNAP, and no-vehicle share in Q3 (moderate elevated
+                      need across multiple signals).
                     </p>
                   </div>
 
@@ -1765,19 +1784,25 @@ export const DashboardStoryReport: React.FC<DashboardStoryReportProps> = ({
                 </h4>
                 <ul className="list-disc pl-5 space-y-1 text-slate-600 dark:text-slate-400 leading-relaxed">
                   <li>
-                    <strong>U.S. Census Bureau ACS 5-Year (2024 vintage):</strong> Table S1701 (Poverty rate &amp; MOE), Table S2201 (SNAP participation rate, households &amp; MOE), Table S0101 (Total population), Table S1901 (Median household income).
+                    <strong>U.S. Census Bureau ACS 5-Year (2024 vintage):</strong> Table S1701 (Poverty rate &amp; MOE),
+                    Table S2201 (SNAP participation rate, households &amp; MOE), Table S0101 (Total population), Table
+                    S1901 (Median household income).
                   </li>
                   <li>
-                    <strong>USDA Economic Research Service Food Access Research Atlas:</strong> Urban classification, low-income tract flag, occupied housing units, and vehicle access indicators.
+                    <strong>USDA Economic Research Service Food Access Research Atlas:</strong> Urban classification,
+                    low-income tract flag, occupied housing units, and vehicle access indicators.
                   </li>
                   <li>
-                    <strong>USDA SNAP Retailer Access Map (SRAM, July 2026 release):</strong> Low-income low-access flags, straight-line distance to grocery stores, and no-vehicle low-access population share.
+                    <strong>USDA SNAP Retailer Access Map (SRAM, July 2026 release):</strong> Low-income low-access
+                    flags, straight-line distance to grocery stores, and no-vehicle low-access population share.
                   </li>
                   <li>
-                    <strong>USDA Food and Nutrition Service SNAP Retailer Locator:</strong> 1,697 geocoded authorized SNAP food retailers across Orange, Osceola, Seminole, and Lake counties.
+                    <strong>USDA Food and Nutrition Service SNAP Retailer Locator:</strong> 1,697 geocoded authorized
+                    SNAP food retailers across Orange, Osceola, Seminole, and Lake counties.
                   </li>
                   <li>
-                    <strong>U.S. Census Bureau TIGER/Line 2020 Shapefiles:</strong> Official census tract boundary polygons.
+                    <strong>U.S. Census Bureau TIGER/Line 2020 Shapefiles:</strong> Official census tract boundary
+                    polygons.
                   </li>
                 </ul>
               </div>

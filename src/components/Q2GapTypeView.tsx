@@ -1,71 +1,57 @@
-import React from 'react';
-import { TractData } from '../types';
-import { Car, ShoppingBag, Users, AlertCircle, HelpCircle, Truck, MapPin, Check } from 'lucide-react';
+import { AlertCircle, Car, HelpCircle, ShoppingBag, Users } from 'lucide-react';
+import type React from 'react';
+import type { CountyName, PrimaryGap, TractData } from '../types';
+
+interface Tally {
+  tracts: number;
+  pop: number;
+}
+
+const GAP_TYPES: PrimaryGap[] = [
+  'Classic food desert',
+  'Vehicle-compounded gap',
+  'SNAP enrollment gap',
+  'Possible blind spot',
+  'Insufficient data',
+  'No gap identified',
+];
+
+const COUNTIES: CountyName[] = ['Orange', 'Osceola', 'Lake', 'Seminole'];
+
+const emptyTallies = () =>
+  Object.fromEntries(GAP_TYPES.map((g) => [g, { tracts: 0, pop: 0 }])) as Record<PrimaryGap, Tally>;
 
 interface Q2GapTypeViewProps {
   tracts: TractData[];
 }
 
 export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
-  // Counts by primary gap
-  const primaryCounts: Record<string, { tracts: number; pop: number }> = {};
-  // Counts including secondary gaps
-  const totalCounts: Record<string, { tracts: number; pop: number }> = {};
+  // Counts by primary gap, and counts including secondary gaps
+  const primaryCounts = emptyTallies();
+  const totalCounts = emptyTallies();
+  const matrix = Object.fromEntries(
+    COUNTIES.map((c) => [c, Object.fromEntries(GAP_TYPES.map((g) => [g, 0]))]),
+  ) as Record<CountyName, Record<PrimaryGap, number>>;
+  const matrixPop = Object.fromEntries(COUNTIES.map((c) => [c, 0])) as Record<CountyName, number>;
 
-  const gapTypes = [
-    'Classic food desert',
-    'Vehicle-compounded gap',
-    'SNAP enrollment gap',
-    'Possible blind spot',
-    'Insufficient data',
-    'No gap identified',
-  ];
+  for (const t of tracts) {
+    primaryCounts[t.primary_gap].tracts += 1;
+    primaryCounts[t.primary_gap].pop += t.population;
 
-  gapTypes.forEach((g) => {
-    primaryCounts[g] = { tracts: 0, pop: 0 };
-    totalCounts[g] = { tracts: 0, pop: 0 };
-  });
-
-  tracts.forEach((t) => {
-    if (primaryCounts[t.primary_gap]) {
-      primaryCounts[t.primary_gap].tracts += 1;
-      primaryCounts[t.primary_gap].pop += t.population;
-    }
-
-    // Add primary
-    if (totalCounts[t.primary_gap]) {
-      totalCounts[t.primary_gap].tracts += 1;
-      totalCounts[t.primary_gap].pop += t.population;
-    }
+    totalCounts[t.primary_gap].tracts += 1;
+    totalCounts[t.primary_gap].pop += t.population;
 
     // Add secondary if present and distinct
-    if (t.secondary_gap && t.secondary_gap !== t.primary_gap && totalCounts[t.secondary_gap]) {
+    if (t.secondary_gap && t.secondary_gap !== t.primary_gap) {
       totalCounts[t.secondary_gap].tracts += 1;
       totalCounts[t.secondary_gap].pop += t.population;
     }
-  });
 
-  // County x Gap Type matrix
-  const counties = ['Orange', 'Osceola', 'Lake', 'Seminole'];
-  const matrix: Record<string, Record<string, number>> = {};
-  const matrixPop: Record<string, number> = {};
-
-  counties.forEach((c) => {
-    matrix[c] = {};
-    gapTypes.forEach((g) => {
-      matrix[c][g] = 0;
-    });
-    matrixPop[c] = 0;
-  });
-
-  tracts.forEach((t) => {
-    if (matrix[t.county] && matrix[t.county][t.primary_gap] !== undefined) {
-      matrix[t.county][t.primary_gap] += 1;
-      if (t.has_gap) {
-        matrixPop[t.county] += t.population;
-      }
+    matrix[t.county][t.primary_gap] += 1;
+    if (t.has_gap) {
+      matrixPop[t.county] += t.population;
     }
-  });
+  }
 
   const gapDescriptions = [
     {
@@ -132,7 +118,9 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
           What Type of Food Access Gap Is It?
         </h2>
         <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
-          Food access is not one single problem. Two Central Florida neighborhoods can appear underserved for entirely different structural reasons. Distinguishing between physical grocery absence, transportation poverty, and benefit under-enrollment ensures limited funding and pantries are deployed effectively.
+          Food access is not one single problem. Two Central Florida neighborhoods can appear underserved for entirely
+          different structural reasons. Distinguishing between physical grocery absence, transportation poverty, and
+          benefit under-enrollment ensures limited funding and pantries are deployed effectively.
         </p>
       </div>
 
@@ -160,11 +148,13 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
                 <th className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400">SNAP Gap</th>
                 <th className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400">Blind Spot</th>
                 <th className="py-2.5 px-3 text-right text-slate-500">Insufficient Data</th>
-                <th className="py-2.5 px-4 text-right font-bold text-slate-900 dark:text-slate-100">People in Gap Tracts</th>
+                <th className="py-2.5 px-4 text-right font-bold text-slate-900 dark:text-slate-100">
+                  People in Gap Tracts
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono tabular-nums">
-              {counties.map((c) => {
+              {COUNTIES.map((c) => {
                 const totalCty = tracts.filter((t) => t.county === c).length;
                 return (
                   <tr key={c} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
@@ -184,9 +174,7 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
                     <td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400">
                       {matrix[c]['Possible blind spot']}
                     </td>
-                    <td className="py-2.5 px-3 text-right text-slate-400">
-                      {matrix[c]['Insufficient data']}
-                    </td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">{matrix[c]['Insufficient data']}</td>
                     <td className="py-2.5 px-4 text-right font-semibold text-slate-900 dark:text-slate-100 font-mono">
                       {matrixPop[c].toLocaleString()}
                     </td>
@@ -194,9 +182,7 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
                 );
               })}
               <tr className="bg-slate-50/80 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-700">
-                <td className="py-3 px-4 font-sans text-slate-900 dark:text-slate-100">
-                  Regional Total
-                </td>
+                <td className="py-3 px-4 font-sans text-slate-900 dark:text-slate-100">Regional Total</td>
                 <td className="py-3 px-3 text-right">{tracts.length}</td>
                 <td className="py-3 px-3 text-right text-red-700 dark:text-red-400">
                   {primaryCounts['Classic food desert'].tracts}
@@ -210,9 +196,7 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
                 <td className="py-3 px-3 text-right text-amber-600 dark:text-amber-400">
                   {primaryCounts['Possible blind spot'].tracts}
                 </td>
-                <td className="py-3 px-3 text-right text-slate-400">
-                  {primaryCounts['Insufficient data'].tracts}
-                </td>
+                <td className="py-3 px-3 text-right text-slate-400">{primaryCounts['Insufficient data'].tracts}</td>
                 <td className="py-3 px-4 text-right text-slate-900 dark:text-slate-100 font-mono">
                   {(
                     primaryCounts['Classic food desert'].pop +
@@ -236,7 +220,8 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
             <b className="text-slate-900 dark:text-slate-100 tabular-nums">
               {totalCounts['SNAP enrollment gap'].tracts} tracts
             </b>{' '}
-            (~{totalCounts['SNAP enrollment gap'].pop.toLocaleString()} people). Transportation is the region’s single most widespread barrier.
+            (~{totalCounts['SNAP enrollment gap'].pop.toLocaleString()} people). Transportation is the region’s single
+            most widespread barrier.
           </p>
         </div>
       </div>
@@ -260,27 +245,21 @@ export const Q2GapTypeView: React.FC<Q2GapTypeViewProps> = ({ tracts }) => {
                       <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-xs">
                         <Icon className="w-4 h-4" />
                       </div>
-                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {item.title}
-                      </h4>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</h4>
                     </div>
                     <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                       {item.count} tracts ({item.pop.toLocaleString()} people)
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {item.what}
-                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{item.what}</p>
                 </div>
 
                 <div className="pt-2.5 border-t border-slate-200/80 dark:border-slate-800 text-xs">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-0.5">
                     Recommended Operational Response:
                   </span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {item.response}
-                  </span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{item.response}</span>
                 </div>
               </div>
             );

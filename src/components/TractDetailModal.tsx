@@ -1,6 +1,6 @@
-import React from 'react';
-import { TractData } from '../types';
-import { X, MapPin, AlertTriangle, CheckCircle, Car, ShoppingBag, Users, DollarSign, HelpCircle } from 'lucide-react';
+import { DollarSign, MapPin, Users, X } from 'lucide-react';
+import type React from 'react';
+import type { TractData } from '../types';
 
 interface TractDetailModalProps {
   tract: TractData | null;
@@ -22,13 +22,14 @@ export const TractDetailModal: React.FC<TractDetailModalProps> = ({ tract, onClo
         <div>
           <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
             <MapPin className="w-3.5 h-3.5 text-red-600" />
-            <span>{tract.county} County · GEOID {tract.GEOID}</span>
+            <span>
+              {tract.county} County · GEOID {tract.GEOID}
+            </span>
           </div>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
-            {tract.tract_name}
-          </h2>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{tract.tract_name}</h2>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
         >
@@ -47,8 +48,8 @@ export const TractDetailModal: React.FC<TractDetailModalProps> = ({ tract, onClo
                 tract.has_gap
                   ? 'text-red-600 dark:text-red-400'
                   : tract.primary_gap === 'Possible blind spot'
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-slate-600 dark:text-slate-400'
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-slate-600 dark:text-slate-400'
               }`}
             >
               {tract.primary_gap}
@@ -131,9 +132,7 @@ export const TractDetailModal: React.FC<TractDetailModalProps> = ({ tract, onClo
                 <span>Median Income</span>
               </div>
               <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-                {tract.median_household_income
-                  ? `$${tract.median_household_income.toLocaleString()}`
-                  : 'N/A'}
+                {tract.median_household_income ? `$${tract.median_household_income.toLocaleString()}` : 'N/A'}
               </div>
             </div>
 
@@ -151,9 +150,7 @@ export const TractDetailModal: React.FC<TractDetailModalProps> = ({ tract, onClo
               <div className="text-slate-400 mb-0.5">SNAP Participation</div>
               <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                 {tract.snap_rate !== null ? `${tract.snap_rate.toFixed(1)}%` : 'N/A'}
-                <span className="text-[10px] text-slate-400 ml-1">
-                  ({tract.snap_households} HH)
-                </span>
+                <span className="text-[10px] text-slate-400 ml-1">({tract.snap_households} HH)</span>
               </div>
             </div>
           </div>

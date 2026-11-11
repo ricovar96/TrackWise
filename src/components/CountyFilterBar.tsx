@@ -1,5 +1,5 @@
-import React from 'react';
-import { CountyFilter } from '../types';
+import type React from 'react';
+import type { CountyFilter } from '../types';
 
 interface CountyFilterBarProps {
   selectedCounty: CountyFilter;
@@ -36,6 +36,7 @@ export const CountyFilterBar: React.FC<CountyFilterBarProps> = ({
           const isActive = selectedCounty === c.id;
           return (
             <button
+              type="button"
               key={c.id}
               onClick={() => onSelectCounty(c.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
@@ -53,33 +54,34 @@ export const CountyFilterBar: React.FC<CountyFilterBarProps> = ({
       {/* Clean Unboxed Metadata Metrics */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
         <div>
-          <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-            {totalTracts}
-          </span>{' '}
-          Tracts
+          <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{totalTracts}</span> Tracts
         </div>
-        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
+          ·
+        </span>
         <div>
-          <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">
-            {gapTracts}
-          </span>{' '}
-          Gap Tracts ({((gapTracts / (totalTracts || 1)) * 100).toFixed(0)}%)
+          <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{gapTracts}</span> Gap Tracts (
+          {((gapTracts / (totalTracts || 1)) * 100).toFixed(0)}%)
         </div>
-        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
+          ·
+        </span>
         <div>
           <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
             {gapPopulation.toLocaleString()}
           </span>{' '}
           People Affected
         </div>
-        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
+          ·
+        </span>
         <div>
-          <span className="font-semibold text-amber-600 dark:text-amber-400 tabular-nums">
-            {blindSpots}
-          </span>{' '}
-          Blind Spots
+          <span className="font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{blindSpots}</span> Blind
+          Spots
         </div>
-        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
+          ·
+        </span>
         <div>
           <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
             {retailerCount.toLocaleString()}

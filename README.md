@@ -18,7 +18,9 @@ npm run dev              # http://localhost:3000 (Express API + Vite middleware)
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Dev server with HMR |
-| `npm run typecheck` | `tsc --noEmit` (strict mode) |
+| `npm run lint` / `npm run format` | Biome lint + format check / auto-fix |
+| `npm run typecheck` | `tsc --noEmit` (strict + `noUncheckedIndexedAccess`) |
+| `npm run verify` | Everything CI runs: lint, typecheck, tests, build |
 | `npm test` | Vitest: classification engine, API, dataset consistency |
 | `npm run build` | Production client bundle to `dist/` |
 | `npm start` | Serve `dist/` + API in production mode (build first) |
@@ -51,3 +53,6 @@ See [.env.example](.env.example). Notes:
 
 - The what-if scenario model does not reproduce the baseline at 0%/0% adjustment (flags 3 extra tracts);
   tracked by an `it.fails` test in `tests/foodGapEngine.test.ts`.
+
+- Lint/format uses Biome rather than ESLint because `typescript-eslint` does not yet support TypeScript 7.
+- The a11y rules for clickable `div`s and unlabeled form controls are set to `warn` (15 existing spots) until fixed.

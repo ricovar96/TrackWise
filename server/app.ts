@@ -1,23 +1,27 @@
-import express, { type NextFunction, type Request, type Response } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import { GoogleGenAI } from '@google/genai';
-import type { AppConfig } from './config';
-import type { Datasets } from './data';
-import { computeStats, COUNTIES, type DatasetStats } from './stats';
+import cors from 'cors';
+import express, { type NextFunction, type Request, type Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import {
-  MAX_MESSAGE_LENGTH,
   buildSystemInstruction,
   generateAnalyticalFallback,
   hasWriteIntent,
+  MAX_MESSAGE_LENGTH,
   readOnlyNotice,
 } from './chat';
+import type { AppConfig } from './config';
+import type { Datasets } from './data';
+import { COUNTIES, computeStats, type DatasetStats } from './stats';
 
 const GEMINI_TIMEOUT_MS = 15_000;
 
 /** Minimal surface of the Gemini client we use; lets tests inject a fake. */
-export type GenerateText = (args: { systemInstruction: string; message: string; signal: AbortSignal }) => Promise<string>;
+export type GenerateText = (args: {
+  systemInstruction: string;
+  message: string;
+  signal: AbortSignal;
+}) => Promise<string>;
 
 export function createGeminiGenerator(config: AppConfig): GenerateText | null {
   if (!config.geminiApiKey) return null;
@@ -45,7 +49,8 @@ export function createApp({ config, data, generateText }: AppDeps) {
   const systemInstruction = buildSystemInstruction(stats);
 
   app.disable('x-powered-by');
-  if (config.trustProxy) app.set('trust proxy', /^\d+$/.test(config.trustProxy) ? Number(config.trustProxy) : config.trustProxy);
+  if (config.trustProxy)
+    app.set('trust proxy', /^\d+$/.test(config.trustProxy) ? Number(config.trustProxy) : config.trustProxy);
 
   // CSP is left to the deployment layer: the app loads Google Maps, Leaflet tiles and fonts from several origins.
   app.use(helmet({ contentSecurityPolicy: false }));
@@ -112,7 +117,12 @@ export function createApp({ config, data, generateText }: AppDeps) {
     app.get(path, (req, res) => {
       const filtered = filterable ? countyFilter(rows, req.query.county) : { rows };
       if ('error' in filtered) return res.status(400).json({ error: filtered.error });
-      res.json({ totalCount: filtered.rows.length, databaseId: config.databaseId, collection: name, data: filtered.rows });
+      res.json({
+        totalCount: filtered.rows.length,
+        databaseId: config.databaseId,
+        collection: name,
+        data: filtered.rows,
+      });
     });
   };
   collection('/api/db/tracts', 'census_tracts', data.tracts, true);

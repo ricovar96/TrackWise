@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { TractData, PrimaryGap } from '../types';
-import { Search, ArrowUpDown, Download, Filter, Eye } from 'lucide-react';
+import { ArrowUpDown, Download, Eye, Search } from 'lucide-react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
+import type { TractData } from '../types';
 
 interface RankedTractsTableProps {
   tracts: TractData[];
@@ -8,11 +9,7 @@ interface RankedTractsTableProps {
   selectedTract: TractData | null;
 }
 
-export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
-  tracts,
-  onSelectTract,
-  selectedTract,
-}) => {
+export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({ tracts, onSelectTract, selectedTract }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [gapFilter, setGapFilter] = useState<string>('all_gaps');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -49,8 +46,8 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
   // Sort tracts
   const sortedTracts = useMemo(() => {
     return [...filteredTracts].sort((a, b) => {
-      let valA = a[sortField] ?? 0;
-      let valB = b[sortField] ?? 0;
+      const valA = a[sortField] ?? 0;
+      const valB = b[sortField] ?? 0;
       if (valA < valB) return sortAsc ? -1 : 1;
       if (valA > valB) return sortAsc ? 1 : -1;
       return 0;
@@ -94,9 +91,7 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
       `"${t.review_tier}"`,
       `"${t.recommended_resource}"`,
     ]);
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent = `data:text/csv;charset=utf-8,${[headers.join(','), ...rows.map((e) => e.join(','))].join('\n')}`;
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -150,6 +145,7 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
           </select>
 
           <button
+            type="button"
             onClick={downloadFilteredCsv}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
@@ -206,7 +202,7 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
                 </td>
               </tr>
             ) : (
-              sortedTracts.map((t, idx) => {
+              sortedTracts.map((t, _idx) => {
                 const isSelected = selectedTract?.GEOID === t.GEOID;
                 return (
                   <tr
@@ -217,9 +213,7 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
                     }`}
                   >
                     <td className="py-2.5 px-4">
-                      <div className="font-semibold text-slate-900 dark:text-slate-100">
-                        {t.tract_name}
-                      </div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">{t.tract_name}</div>
                       <div className="text-[11px] text-slate-500">
                         {t.county} County · GEOID {t.GEOID}
                       </div>
@@ -231,9 +225,7 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
                       {t.poverty_rate !== null ? (
                         <span>
                           {t.poverty_rate.toFixed(1)}%{' '}
-                          <span className="text-[10px] text-slate-400">
-                            ±{t.poverty_rate_moe?.toFixed(1) || '0'}%
-                          </span>
+                          <span className="text-[10px] text-slate-400">±{t.poverty_rate_moe?.toFixed(1) || '0'}%</span>
                         </span>
                       ) : (
                         'N/A'
@@ -248,30 +240,27 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
                           t.primary_gap === 'Classic food desert'
                             ? 'text-red-700 dark:text-red-400 font-semibold'
                             : t.primary_gap === 'Vehicle-compounded gap'
-                            ? 'text-red-600 dark:text-red-400'
-                            : t.primary_gap === 'SNAP enrollment gap'
-                            ? 'text-rose-600 dark:text-rose-400'
-                            : t.primary_gap === 'Possible blind spot'
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-slate-500'
+                              ? 'text-red-600 dark:text-red-400'
+                              : t.primary_gap === 'SNAP enrollment gap'
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : t.primary_gap === 'Possible blind spot'
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-slate-500'
                         }
                       >
                         {t.primary_gap}
                       </span>
                     </td>
                     <td className="py-2.5 px-4">
-                      <span className="text-slate-700 dark:text-slate-300 font-medium">
-                        {t.review_tier}
-                      </span>
+                      <span className="text-slate-700 dark:text-slate-300 font-medium">{t.review_tier}</span>
                       <span className="text-[10px] text-slate-400 block">
                         {t.confidence} conf. ({t.confidence_score} pts)
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 text-slate-800 dark:text-slate-200">
-                      {t.recommended_resource}
-                    </td>
+                    <td className="py-2.5 px-4 text-slate-800 dark:text-slate-200">{t.recommended_resource}</td>
                     <td className="py-2.5 px-4 text-right">
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           onSelectTract(t);
@@ -292,7 +281,9 @@ export const RankedTractsTable: React.FC<RankedTractsTableProps> = ({
 
       {/* Footer info */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between text-xs text-slate-500">
-        <div>Showing {sortedTracts.length} of {tracts.length} tracts</div>
+        <div>
+          Showing {sortedTracts.length} of {tracts.length} tracts
+        </div>
         <div className="text-[11px]">Click any row to inspect details or zoom on map</div>
       </div>
     </div>

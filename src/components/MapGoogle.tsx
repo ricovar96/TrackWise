@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
+  APILoadingStatus,
   APIProvider,
   Map as GoogleMapComponent,
-  useMap,
   useApiLoadingStatus,
-  APILoadingStatus,
+  useMap,
 } from '@vis.gl/react-google-maps';
-import { TractData, RetailerData, ChurchData, SchoolData, ShadingMode, CountyFilter } from '../types';
-import { Layers, Store, Church, GraduationCap, RotateCcw, Map as MapIcon, Globe, Sparkles, Key, AlertTriangle, ArrowRight } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Church, Globe, GraduationCap, Layers, Store } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ChurchData, CountyFilter, RetailerData, SchoolData, ShadingMode, TractData } from '../types';
 
 interface MapGoogleProps {
   tracts: TractData[];
@@ -77,7 +78,9 @@ const GoogleMapDataLayer: React.FC<{
       .then((res) => res.json())
       .then((geoJson) => {
         // Clear any prior features
-        map.data.forEach((f: google.maps.Data.Feature) => map.data.remove(f));
+        map.data.forEach((f: google.maps.Data.Feature) => {
+          map.data.remove(f);
+        });
         map.data.addGeoJson(geoJson);
         setGeoJsonLoaded(true);
       })
@@ -176,9 +179,12 @@ const GoogleMapDataLayer: React.FC<{
         fillOpacity = 0.85;
       } else if (shadingMode === 'confidence') {
         const score = tract.confidence_score ?? 4;
-        if (score === 4) fillColor = '#059669'; // High
-        else if (score === 3) fillColor = '#0d9488'; // Moderate
-        else if (score === 2) fillColor = '#d97706'; // Low
+        if (score === 4)
+          fillColor = '#059669'; // High
+        else if (score === 3)
+          fillColor = '#0d9488'; // Moderate
+        else if (score === 2)
+          fillColor = '#d97706'; // Low
         else fillColor = '#dc2626'; // Very Low
         fillOpacity = 0.8;
       }
@@ -210,49 +216,40 @@ const GoogleMapDataLayer: React.FC<{
   useEffect(() => {
     if (!map || !geoJsonLoaded) return;
 
-    const mouseOverListener = map.data.addListener(
-      'mouseover',
-      (e: google.maps.Data.MouseEvent) => {
-        const geoid = e.feature.getProperty('GEOID') as string;
-        hoveredGeoidRef.current = geoid;
-        const tract = tractLookup[geoid] || null;
+    const mouseOverListener = map.data.addListener('mouseover', (e: google.maps.Data.MouseEvent) => {
+      const geoid = e.feature.getProperty('GEOID') as string;
+      hoveredGeoidRef.current = geoid;
+      const tract = tractLookup[geoid] || null;
 
-        // Trigger dynamic styling re-eval for the hovered item
-        map.data.revertStyle();
-        map.data.overrideStyle(e.feature, {
-          strokeColor: '#facc15',
-          strokeWeight: 2.5,
-          zIndex: 5,
-        });
+      // Trigger dynamic styling re-eval for the hovered item
+      map.data.revertStyle();
+      map.data.overrideStyle(e.feature, {
+        strokeColor: '#facc15',
+        strokeWeight: 2.5,
+        zIndex: 5,
+      });
 
-        if (e.domEvent && 'clientX' in e.domEvent) {
-          const mouseEv = e.domEvent as MouseEvent;
-          onHoverTract(tract, { x: mouseEv.clientX, y: mouseEv.clientY });
-        } else {
-          onHoverTract(tract, null);
-        }
+      if (e.domEvent && 'clientX' in e.domEvent) {
+        const mouseEv = e.domEvent as MouseEvent;
+        onHoverTract(tract, { x: mouseEv.clientX, y: mouseEv.clientY });
+      } else {
+        onHoverTract(tract, null);
       }
-    );
+    });
 
-    const mouseOutListener = map.data.addListener(
-      'mouseout',
-      () => {
-        hoveredGeoidRef.current = null;
-        map.data.revertStyle();
-        onHoverTract(null, null);
-      }
-    );
+    const mouseOutListener = map.data.addListener('mouseout', () => {
+      hoveredGeoidRef.current = null;
+      map.data.revertStyle();
+      onHoverTract(null, null);
+    });
 
-    const clickListener = map.data.addListener(
-      'click',
-      (e: google.maps.Data.MouseEvent) => {
-        const geoid = e.feature.getProperty('GEOID') as string;
-        const tract = tractLookup[geoid];
-        if (tract) {
-          onSelectTract(tract);
-        }
+    const clickListener = map.data.addListener('click', (e: google.maps.Data.MouseEvent) => {
+      const geoid = e.feature.getProperty('GEOID') as string;
+      const tract = tractLookup[geoid];
+      if (tract) {
+        onSelectTract(tract);
       }
-    );
+    });
 
     return () => {
       google.maps.event.removeListener(mouseOverListener);
@@ -267,13 +264,13 @@ const GoogleMapDataLayer: React.FC<{
 
     const countyCenters: Record<string, { lat: number; lng: number; zoom: number }> = {
       Orange: { lat: 28.5383, lng: -81.3792, zoom: 10 },
-      Osceola: { lat: 28.2000, lng: -81.1500, zoom: 10 },
-      Seminole: { lat: 28.7100, lng: -81.2500, zoom: 11 },
-      Lake: { lat: 28.8000, lng: -81.7500, zoom: 10 },
+      Osceola: { lat: 28.2, lng: -81.15, zoom: 10 },
+      Seminole: { lat: 28.71, lng: -81.25, zoom: 11 },
+      Lake: { lat: 28.8, lng: -81.75, zoom: 10 },
       All: { lat: 28.5383, lng: -81.3792, zoom: 9 },
     };
 
-    const target = countyCenters[selectedCounty] || countyCenters.All;
+    const target = countyCenters[selectedCounty] ?? { lat: 28.5383, lng: -81.3792, zoom: 9 };
     map.panTo({ lat: target.lat, lng: target.lng });
     map.setZoom(target.zoom);
   }, [map, selectedCounty]);
@@ -283,7 +280,9 @@ const GoogleMapDataLayer: React.FC<{
     if (!map) return;
 
     // Clean up old markers
-    retailerMarkersRef.current.forEach((m) => m.setMap(null));
+    retailerMarkersRef.current.forEach((m) => {
+      m.setMap(null);
+    });
     retailerMarkersRef.current = [];
 
     if (!showRetailers) return;
@@ -329,7 +328,9 @@ const GoogleMapDataLayer: React.FC<{
     retailerMarkersRef.current = circles;
 
     return () => {
-      circles.forEach((c) => c.setMap(null));
+      circles.forEach((c) => {
+        c.setMap(null);
+      });
     };
   }, [map, showRetailers, retailers, selectedCounty]);
 
@@ -337,15 +338,14 @@ const GoogleMapDataLayer: React.FC<{
   useEffect(() => {
     if (!map) return;
 
-    churchMarkersRef.current.forEach((m) => m.setMap(null));
+    churchMarkersRef.current.forEach((m) => {
+      m.setMap(null);
+    });
     churchMarkersRef.current = [];
 
     if (!showChurches || !churches) return;
 
-    const activeChurches =
-      selectedCounty === 'All'
-        ? churches
-        : churches.filter((c) => c.county === selectedCounty);
+    const activeChurches = selectedCounty === 'All' ? churches : churches.filter((c) => c.county === selectedCounty);
 
     const circles: google.maps.Circle[] = [];
 
@@ -382,7 +382,9 @@ const GoogleMapDataLayer: React.FC<{
     churchMarkersRef.current = circles;
 
     return () => {
-      circles.forEach((c) => c.setMap(null));
+      circles.forEach((c) => {
+        c.setMap(null);
+      });
     };
   }, [map, showChurches, churches, selectedCounty]);
 
@@ -390,15 +392,14 @@ const GoogleMapDataLayer: React.FC<{
   useEffect(() => {
     if (!map) return;
 
-    schoolMarkersRef.current.forEach((m) => m.setMap(null));
+    schoolMarkersRef.current.forEach((m) => {
+      m.setMap(null);
+    });
     schoolMarkersRef.current = [];
 
     if (!showSchools || !schools) return;
 
-    const activeSchools =
-      selectedCounty === 'All'
-        ? schools
-        : schools.filter((s) => s.county === selectedCounty);
+    const activeSchools = selectedCounty === 'All' ? schools : schools.filter((s) => s.county === selectedCounty);
 
     const circles: google.maps.Circle[] = [];
 
@@ -435,7 +436,9 @@ const GoogleMapDataLayer: React.FC<{
     schoolMarkersRef.current = circles;
 
     return () => {
-      circles.forEach((c) => c.setMap(null));
+      circles.forEach((c) => {
+        c.setMap(null);
+      });
     };
   }, [map, showSchools, schools, selectedCounty]);
 
@@ -457,10 +460,12 @@ const MapLoadingChecker: React.FC<{
         </div>
         <h3 className="text-base font-semibold mb-1">Google Maps Platform Notice</h3>
         <p className="text-xs text-slate-300 max-w-md mb-6 leading-relaxed">
-          Google Maps Platform requires an active API key with Maps JavaScript API enabled. You can continue using our built-in high-performance Canvas GIS (Esri) basemap which requires zero API keys.
+          Google Maps Platform requires an active API key with Maps JavaScript API enabled. You can continue using our
+          built-in high-performance Canvas GIS (Esri) basemap which requires zero API keys.
         </p>
         {onSwitchToLeaflet && (
           <button
+            type="button"
             onClick={onSwitchToLeaflet}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow-md transition-colors"
           >
@@ -493,25 +498,21 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
   const [showSchools, setShowSchools] = useState<boolean>(false);
   const [mapTypeId, setMapTypeId] = useState<'roadmap' | 'satellite' | 'hybrid' | 'terrain'>('roadmap');
   const [hoveredTract, setHoveredTract] = useState<TractData | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [_tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   // Read Google Maps API Key from environment or local storage
   const [apiKey, setApiKey] = useState<string>(() => {
-    return (
-      localStorage.getItem('GOOGLE_MAPS_API_KEY') ||
-      (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY ||
-      ''
-    );
+    return localStorage.getItem('GOOGLE_MAPS_API_KEY') || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
   });
   const [keyInput, setKeyInput] = useState<string>('');
-  const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
+  const [_showKeyModal, setShowKeyModal] = useState<boolean>(false);
 
   useEffect(() => {
-    const envKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY;
+    const envKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (envKey && envKey !== apiKey) {
       setApiKey(envKey);
     }
-  }, [(import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY, apiKey]);
+  }, [apiKey]);
 
   const handleSaveKey = () => {
     if (keyInput.trim()) {
@@ -530,7 +531,8 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
         </div>
         <h3 className="text-base font-semibold mb-2">Google Maps Platform Setup</h3>
         <p className="text-xs text-slate-300 max-w-md mb-6 leading-relaxed">
-          To view this map using Google Maps Platform (Roadmap, Satellite, Terrain), please provide a Google Maps API Key, or switch to the built-in Canvas GIS map which requires no key and has zero watermarks.
+          To view this map using Google Maps Platform (Roadmap, Satellite, Terrain), please provide a Google Maps API
+          Key, or switch to the built-in Canvas GIS map which requires no key and has zero watermarks.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md mb-4">
@@ -542,6 +544,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
             className="flex-1 px-3 py-2 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:border-red-500"
           />
           <button
+            type="button"
             onClick={handleSaveKey}
             disabled={!keyInput.trim()}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-xs whitespace-nowrap transition-colors"
@@ -553,6 +556,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
         {onSwitchToLeaflet && (
           <div className="pt-2">
             <button
+              type="button"
               onClick={onSwitchToLeaflet}
               className="text-xs text-slate-400 hover:text-white underline flex items-center gap-1.5 transition-colors"
             >
@@ -576,6 +580,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
             <span>Layer:</span>
           </span>
           <button
+            type="button"
             onClick={() => setShadingMode('severity')}
             className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
               shadingMode === 'severity'
@@ -586,6 +591,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
             Gap Severity
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('poverty')}
             className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
               shadingMode === 'poverty'
@@ -596,6 +602,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
             Poverty Rate
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('vehicle')}
             className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
               shadingMode === 'vehicle'
@@ -606,6 +613,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
             Vehicle Low Access
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('snap')}
             className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
               shadingMode === 'snap'
@@ -616,6 +624,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
             SNAP Rate
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('confidence')}
             className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
               shadingMode === 'confidence'
@@ -632,6 +641,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
           {/* Basemap type selector */}
           <div className="flex items-center bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-md text-xs">
             <button
+              type="button"
               onClick={() => setMapTypeId('roadmap')}
               className={`px-2 py-1 rounded-md font-medium transition-colors ${
                 mapTypeId === 'roadmap'
@@ -642,6 +652,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
               Roadmap
             </button>
             <button
+              type="button"
               onClick={() => setMapTypeId('satellite')}
               className={`px-2 py-1 rounded-md font-medium transition-colors ${
                 mapTypeId === 'satellite'
@@ -652,6 +663,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
               Satellite
             </button>
             <button
+              type="button"
               onClick={() => setMapTypeId('terrain')}
               className={`px-2 py-1 rounded-md font-medium transition-colors ${
                 mapTypeId === 'terrain'
@@ -665,6 +677,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
 
           {/* SNAP Retailer Toggle */}
           <button
+            type="button"
             onClick={() => setShowRetailers(!showRetailers)}
             className={`pointer-events-auto px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 shadow-md transition-colors ${
               showRetailers
@@ -678,6 +691,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
 
           {/* Churches Toggle */}
           <button
+            type="button"
             onClick={() => setShowChurches(!showChurches)}
             className={`pointer-events-auto px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 shadow-md transition-colors ${
               showChurches
@@ -691,6 +705,7 @@ export const MapGoogle: React.FC<MapGoogleProps> = ({
 
           {/* Schools Toggle */}
           <button
+            type="button"
             onClick={() => setShowSchools(!showSchools)}
             className={`pointer-events-auto px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 shadow-md transition-colors ${
               showSchools

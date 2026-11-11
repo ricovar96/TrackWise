@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { loadConfig } from '../server/config';
+import { loadDatasets } from '../server/data';
 import {
   calculateRankQuartile,
   classifyTractGaps,
@@ -6,8 +8,6 @@ import {
   scoreConfidence,
   validateCsvHeader,
 } from '../src/services/foodGapEngine';
-import { loadConfig } from '../server/config';
-import { loadDatasets } from '../server/data';
 
 const { tracts } = loadDatasets(loadConfig({ NODE_ENV: 'test' }).dataDir);
 
@@ -25,7 +25,7 @@ describe('calculateRankQuartile', () => {
   });
 
   it('is monotonic across the distribution', () => {
-    const qs = sorted.map((v) => calculateRankQuartile(sorted, v)!);
+    const qs = sorted.map((v) => calculateRankQuartile(sorted, v) ?? -1);
     expect([...qs].sort()).toEqual(qs);
   });
 });

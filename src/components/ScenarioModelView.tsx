@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { TractData } from '../types';
+import { ArrowDownRight, ArrowUpRight, Eye, RotateCcw, Sliders } from 'lucide-react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
 import { runScenarioModel } from '../services/foodGapEngine';
-import { Sliders, RotateCcw, AlertCircle, ArrowUpRight, ArrowDownRight, Users, MapPin, Eye } from 'lucide-react';
+import type { TractData } from '../types';
 
 interface ScenarioModelViewProps {
   tracts: TractData[];
@@ -39,12 +40,15 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
               <span>FR-13: Interactive What-If Scenario Studio</span>
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
-              This scenario model is a decision-support what-if tool, not a time-series forecast. Adjust regional poverty and vehicle barrier levels to evaluate sensitivity, anticipate future demographic stress, and prioritize interventions.
+              This scenario model is a decision-support what-if tool, not a time-series forecast. Adjust regional
+              poverty and vehicle barrier levels to evaluate sensitivity, anticipate future demographic stress, and
+              prioritize interventions.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleSetPreset10}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                 povertyDeltaPct === 10 && vehicleDeltaPct === 0
@@ -55,6 +59,7 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
               +10% Poverty Benchmark
             </button>
             <button
+              type="button"
               onClick={handleReset}
               disabled={!isChanged}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-40 transition-colors"
@@ -77,16 +82,14 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
           {/* Poverty Rate Slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-slate-800 dark:text-slate-200">
-                Regional Poverty Rate Shift
-              </span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">Regional Poverty Rate Shift</span>
               <span
                 className={`font-mono font-bold tabular-nums ${
                   povertyDeltaPct > 0
                     ? 'text-red-600 dark:text-red-400'
                     : povertyDeltaPct < 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-slate-900 dark:text-slate-100'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-900 dark:text-slate-100'
                 }`}
               >
                 {povertyDeltaPct > 0 ? `+${povertyDeltaPct}%` : `${povertyDeltaPct}%`}
@@ -111,16 +114,14 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
           {/* Vehicle Access Slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-slate-800 dark:text-slate-200">
-                No-Vehicle Low-Access Share Shift
-              </span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">No-Vehicle Low-Access Share Shift</span>
               <span
                 className={`font-mono font-bold tabular-nums ${
                   vehicleDeltaPct > 0
                     ? 'text-red-600 dark:text-red-400'
                     : vehicleDeltaPct < 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-slate-900 dark:text-slate-100'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-900 dark:text-slate-100'
                 }`}
               >
                 {vehicleDeltaPct > 0 ? `+${vehicleDeltaPct}%` : `${vehicleDeltaPct}%`}
@@ -143,7 +144,8 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
-            Fixed model cutoffs: 75th percentile of poverty (17.1%), 75th percentile of vehicle access share (0.49), median SNAP rate (11.3%).
+            Fixed model cutoffs: 75th percentile of poverty (17.1%), 75th percentile of vehicle access share (0.49),
+            median SNAP rate (11.3%).
           </div>
         </div>
 
@@ -166,14 +168,13 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
                   scenarioResult.deltaTracts > 0
                     ? 'text-red-600 dark:text-red-400'
                     : scenarioResult.deltaTracts < 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-slate-600 dark:text-slate-400'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 {scenarioResult.deltaTracts > 0 ? (
                   <>
-                    <ArrowUpRight className="w-4 h-4" />
-                    +{scenarioResult.deltaTracts} tracts
+                    <ArrowUpRight className="w-4 h-4" />+{scenarioResult.deltaTracts} tracts
                   </>
                 ) : scenarioResult.deltaTracts < 0 ? (
                   <>
@@ -203,14 +204,13 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
                   scenarioResult.deltaPopulation > 0
                     ? 'text-red-600 dark:text-red-400'
                     : scenarioResult.deltaPopulation < 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-slate-600 dark:text-slate-400'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 {scenarioResult.deltaPopulation > 0 ? (
                   <>
-                    <ArrowUpRight className="w-4 h-4" />
-                    +{scenarioResult.deltaPopulation.toLocaleString()} residents
+                    <ArrowUpRight className="w-4 h-4" />+{scenarioResult.deltaPopulation.toLocaleString()} residents
                   </>
                 ) : scenarioResult.deltaPopulation < 0 ? (
                   <>
@@ -260,7 +260,8 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono tabular-nums">
                 {scenarioResult.newlyFlaggedTracts.map((t) => {
-                  const simPov = t.poverty_rate !== null ? (t.poverty_rate * (1 + povertyDeltaPct / 100)).toFixed(1) : 'N/A';
+                  const simPov =
+                    t.poverty_rate !== null ? (t.poverty_rate * (1 + povertyDeltaPct / 100)).toFixed(1) : 'N/A';
                   return (
                     <tr
                       key={t.GEOID}
@@ -269,7 +270,9 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
                     >
                       <td className="py-2 px-4 font-sans">
                         <span className="font-semibold text-slate-900 dark:text-slate-100">{t.tract_name}</span>
-                        <span className="text-[11px] text-slate-500 block">{t.county} County · {t.GEOID}</span>
+                        <span className="text-[11px] text-slate-500 block">
+                          {t.county} County · {t.GEOID}
+                        </span>
                       </td>
                       <td className="py-2 px-3 text-right">{t.population.toLocaleString()}</td>
                       <td className="py-2 px-3 text-right">{t.poverty_rate?.toFixed(1) || 'N/A'}%</td>
@@ -277,6 +280,7 @@ export const ScenarioModelView: React.FC<ScenarioModelViewProps> = ({ tracts, on
                       <td className="py-2 px-3 text-right">{t.no_vehicle_low_access_pct.toFixed(2)} share</td>
                       <td className="py-2 px-4 text-right">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectTract(t);

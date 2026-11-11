@@ -1,7 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import L from 'leaflet';
-import { TractData, RetailerData, ChurchData, SchoolData, ShadingMode, CountyFilter } from '../types';
-import { Layers, Store, Church, GraduationCap, Maximize2, Info } from 'lucide-react';
+import { Church, GraduationCap, Layers, Store } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ChurchData, CountyFilter, RetailerData, SchoolData, ShadingMode, TractData } from '../types';
+
+type TractFeature = Feature<Geometry, { GEOID?: string }>;
+type TractCollection = FeatureCollection<Geometry, { GEOID?: string }>;
 
 interface MapLeafletProps {
   tracts: TractData[];
@@ -38,21 +43,21 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
   const [showRetailers, setShowRetailers] = useState<boolean>(false);
   const [showChurches, setShowChurches] = useState<boolean>(false);
   const [showSchools, setShowSchools] = useState<boolean>(false);
-  const [geojsonData, setGeojsonData] = useState<any>(null);
+  const [geojsonData, setGeojsonData] = useState<TractCollection | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Map of tracts by GEOID
   const tractMap = useRef<Map<string, TractData>>(new Map());
   useEffect(() => {
     const map = new Map<string, TractData>();
-    tracts.forEach((t) => map.set(t.GEOID, t));
+    for (const t of tracts) map.set(t.GEOID, t);
     tractMap.current = map;
   }, [tracts]);
 
   // Fetch GeoJSON boundary file once
   useEffect(() => {
     fetch('/data/central_fl_tracts.geojson')
-      .then((res) => res.json())
+      .then((res) => res.json() as Promise<TractCollection>)
       .then((data) => {
         setGeojsonData(data);
         setLoading(false);
@@ -83,8 +88,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
       : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 
     const tiles = L.tileLayer(tileUrl, {
-      attribution:
-        '&copy; <a href="https://www.esri.com/">Esri</a>, USGS, Census 2020 TIGER',
+      attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, USGS, Census 2020 TIGER',
       maxZoom: 16,
     });
     tiles.addTo(map);
@@ -98,105 +102,108 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
   }, [isDark]);
 
   // Style function for GeoJSON polygons based on shadingMode
-  const getFeatureStyle = (feature: any) => {
-    const geoid = feature?.properties?.GEOID;
-    const tract = tractMap.current.get(geoid);
-    const isSelected = selectedTract && selectedTract.GEOID === geoid;
+  const getFeatureStyle = useCallback(
+    (feature?: TractFeature): L.PathOptions => {
+      const geoid = feature?.properties?.GEOID;
+      const tract = tractMap.current.get(geoid ?? '');
+      const isSelected = selectedTract && selectedTract.GEOID === geoid;
 
-    let fillColor = isDark ? '#1e293b' : '#f1f5f9';
-    let fillOpacity = 0.8;
-    let strokeColor = isDark ? '#334155' : '#cbd5e1';
-    let weight = 1;
+      let fillColor = isDark ? '#1e293b' : '#f1f5f9';
+      let fillOpacity = 0.8;
+      let strokeColor = isDark ? '#334155' : '#cbd5e1';
+      let weight = 1;
 
-    if (!tract) {
-      return { fillColor, fillOpacity, color: strokeColor, weight };
-    }
+      if (!tract) {
+        return { fillColor, fillOpacity, color: strokeColor, weight };
+      }
 
-    // Check if filtered out by county
-    if (selectedCounty !== 'All' && tract.county !== selectedCounty) {
+      // Check if filtered out by county
+      if (selectedCounty !== 'All' && tract.county !== selectedCounty) {
+        return {
+          fillColor: isDark ? '#0f172a' : '#f8fafc',
+          fillOpacity: 0.15,
+          color: isDark ? '#1e293b' : '#e2e8f0',
+          weight: 0.5,
+        };
+      }
+
+      if (shadingMode === 'severity') {
+        switch (tract.primary_gap) {
+          case 'Classic food desert':
+            fillColor = '#991b1b'; // Dark Crimson
+            fillOpacity = 0.9;
+            break;
+          case 'Vehicle-compounded gap':
+            fillColor = '#dc2626'; // Vivid Red
+            fillOpacity = 0.85;
+            break;
+          case 'SNAP enrollment gap':
+            fillColor = '#f87171'; // Light Red / Coral
+            fillOpacity = 0.8;
+            break;
+          case 'Possible blind spot':
+            fillColor = '#fca5a5'; // Lightest red / Salmon (monochromatic red scale)
+            fillOpacity = 0.8;
+            break;
+          case 'Insufficient data':
+            fillColor = '#94a3b8'; // Slate
+            fillOpacity = 0.6;
+            break;
+          default:
+            fillColor = isDark ? '#1e293b' : '#e2e8f0';
+            fillOpacity = 0.5;
+            break;
+        }
+      } else if (shadingMode === 'poverty') {
+        const pov = tract.poverty_rate ?? 0;
+        if (pov >= 25) fillColor = '#7f1d1d';
+        else if (pov >= 18) fillColor = '#b91c1c';
+        else if (pov >= 12) fillColor = '#ef4444';
+        else if (pov >= 7) fillColor = '#fca5a5';
+        else fillColor = isDark ? '#1e293b' : '#fee2e2';
+        fillOpacity = 0.85;
+      } else if (shadingMode === 'snap') {
+        const snap = tract.snap_rate ?? 0;
+        if (snap >= 25) fillColor = '#1e3a8a';
+        else if (snap >= 18) fillColor = '#2563eb';
+        else if (snap >= 10) fillColor = '#60a5fa';
+        else if (snap >= 5) fillColor = '#93c5fd';
+        else fillColor = isDark ? '#1e293b' : '#dbeafe';
+        fillOpacity = 0.85;
+      } else if (shadingMode === 'vehicle') {
+        const vehShare = tract.no_vehicle_low_access_pct ?? 0;
+        if (vehShare >= 0.75) fillColor = '#581c87';
+        else if (vehShare >= 0.5) fillColor = '#7e22ce';
+        else if (vehShare >= 0.25) fillColor = '#a855f7';
+        else if (vehShare > 0) fillColor = '#d8b4fe';
+        else fillColor = isDark ? '#1e293b' : '#f3e8ff';
+        fillOpacity = 0.85;
+      } else if (shadingMode === 'confidence') {
+        if (tract.review_tier === 'Tier 1') {
+          fillColor = '#15803d'; // Green (Ready to act)
+        } else if (tract.review_tier === 'Tier 2') {
+          fillColor = '#eab308'; // Yellow (Team review)
+        } else {
+          fillColor = '#dc2626'; // Red (Review required)
+        }
+        fillOpacity = 0.8;
+      }
+
+      if (isSelected) {
+        strokeColor = '#2563eb'; // Blue highlight
+        weight = 3;
+        fillOpacity = 0.95;
+      }
+
       return {
-        fillColor: isDark ? '#0f172a' : '#f8fafc',
-        fillOpacity: 0.15,
-        color: isDark ? '#1e293b' : '#e2e8f0',
-        weight: 0.5,
+        fillColor,
+        fillOpacity,
+        color: strokeColor,
+        weight,
       };
-    }
-
-    if (shadingMode === 'severity') {
-      switch (tract.primary_gap) {
-        case 'Classic food desert':
-          fillColor = '#991b1b'; // Dark Crimson
-          fillOpacity = 0.9;
-          break;
-        case 'Vehicle-compounded gap':
-          fillColor = '#dc2626'; // Vivid Red
-          fillOpacity = 0.85;
-          break;
-        case 'SNAP enrollment gap':
-          fillColor = '#f87171'; // Light Red / Coral
-          fillOpacity = 0.8;
-          break;
-        case 'Possible blind spot':
-          fillColor = '#fca5a5'; // Lightest red / Salmon (monochromatic red scale)
-          fillOpacity = 0.8;
-          break;
-        case 'Insufficient data':
-          fillColor = '#94a3b8'; // Slate
-          fillOpacity = 0.6;
-          break;
-        default:
-          fillColor = isDark ? '#1e293b' : '#e2e8f0';
-          fillOpacity = 0.5;
-          break;
-      }
-    } else if (shadingMode === 'poverty') {
-      const pov = tract.poverty_rate ?? 0;
-      if (pov >= 25) fillColor = '#7f1d1d';
-      else if (pov >= 18) fillColor = '#b91c1c';
-      else if (pov >= 12) fillColor = '#ef4444';
-      else if (pov >= 7) fillColor = '#fca5a5';
-      else fillColor = isDark ? '#1e293b' : '#fee2e2';
-      fillOpacity = 0.85;
-    } else if (shadingMode === 'snap') {
-      const snap = tract.snap_rate ?? 0;
-      if (snap >= 25) fillColor = '#1e3a8a';
-      else if (snap >= 18) fillColor = '#2563eb';
-      else if (snap >= 10) fillColor = '#60a5fa';
-      else if (snap >= 5) fillColor = '#93c5fd';
-      else fillColor = isDark ? '#1e293b' : '#dbeafe';
-      fillOpacity = 0.85;
-    } else if (shadingMode === 'vehicle') {
-      const vehShare = tract.no_vehicle_low_access_pct ?? 0;
-      if (vehShare >= 0.75) fillColor = '#581c87';
-      else if (vehShare >= 0.5) fillColor = '#7e22ce';
-      else if (vehShare >= 0.25) fillColor = '#a855f7';
-      else if (vehShare > 0) fillColor = '#d8b4fe';
-      else fillColor = isDark ? '#1e293b' : '#f3e8ff';
-      fillOpacity = 0.85;
-    } else if (shadingMode === 'confidence') {
-      if (tract.review_tier === 'Tier 1') {
-        fillColor = '#15803d'; // Green (Ready to act)
-      } else if (tract.review_tier === 'Tier 2') {
-        fillColor = '#eab308'; // Yellow (Team review)
-      } else {
-        fillColor = '#dc2626'; // Red (Review required)
-      }
-      fillOpacity = 0.8;
-    }
-
-    if (isSelected) {
-      strokeColor = '#2563eb'; // Blue highlight
-      weight = 3;
-      fillOpacity = 0.95;
-    }
-
-    return {
-      fillColor,
-      fillOpacity,
-      color: strokeColor,
-      weight,
-    };
-  };
+    },
+    [isDark, selectedCounty, selectedTract, shadingMode],
+  );
 
   // Render GeoJSON Layer
   useEffect(() => {
@@ -211,7 +218,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
       style: getFeatureStyle,
       onEachFeature: (feature, layer) => {
         const geoid = feature?.properties?.GEOID;
-        const tract = tractMap.current.get(geoid);
+        const tract = tractMap.current.get(geoid ?? '');
 
         if (tract) {
           // FR-04: Tooltip with key specs
@@ -219,10 +226,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             tract.poverty_rate !== null
               ? `${tract.poverty_rate.toFixed(1)}% (±${tract.poverty_rate_moe?.toFixed(1) || '0'}%)`
               : 'N/A';
-          const snapText =
-            tract.snap_rate !== null
-              ? `${tract.snap_rate.toFixed(1)}%`
-              : 'N/A';
+          const snapText = tract.snap_rate !== null ? `${tract.snap_rate.toFixed(1)}%` : 'N/A';
 
           const tooltipContent = `
             <div style="font-size: 12px; line-height: 1.4; padding: 2px;">
@@ -266,19 +270,15 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
       map.setView([28.5383, -81.3792], 9);
     } else {
       const countyFeatures = geojsonData.features.filter(
-        (f: any) =>
-          (tractMap.current.get(f.properties?.GEOID)?.county as string) ===
-          selectedCounty
+        (f) => (tractMap.current.get(f.properties?.GEOID ?? '')?.county as string) === selectedCounty,
       );
       if (countyFeatures.length > 0) {
-        const tempLayer = L.geoJSON({
-          type: 'FeatureCollection',
-          features: countyFeatures,
-        } as any);
+        const subset: TractCollection = { type: 'FeatureCollection', features: countyFeatures };
+        const tempLayer = L.geoJSON(subset);
         map.fitBounds(tempLayer.getBounds(), { padding: [20, 20] });
       }
     }
-  }, [geojsonData, shadingMode, selectedCounty, selectedTract, isDark]);
+  }, [geojsonData, selectedCounty, onSelectTract, getFeatureStyle]);
 
   // Render SNAP Retailers Layer
   useEffect(() => {
@@ -293,9 +293,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     if (showRetailers && retailers.length > 0) {
       const markers: L.CircleMarker[] = [];
       const filteredRetailers =
-        selectedCounty === 'All'
-          ? retailers
-          : retailers.filter((r) => r.county === selectedCounty);
+        selectedCounty === 'All' ? retailers : retailers.filter((r) => r.county === selectedCounty);
 
       filteredRetailers.forEach((r) => {
         const marker = L.circleMarker([r.latitude, r.longitude], {
@@ -309,7 +307,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         marker.bindTooltip(
           `<div style="font-size: 11px;"><b>🛒 ${r.store_name}</b><br/>${r.address}, ${r.city}<br/><span style="color:#059669; font-weight:600;">Authorized SNAP Retailer</span></div>`,
-          { sticky: true }
+          { sticky: true },
         );
         markers.push(marker);
       });
@@ -333,9 +331,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
     if (showChurches && churches && churches.length > 0) {
       const markers: L.CircleMarker[] = [];
       const filteredChurches =
-        selectedCounty === 'All'
-          ? churches
-          : churches.filter((c) => c.county === selectedCounty);
+        selectedCounty === 'All' ? churches : churches.filter((c) => c.county === selectedCounty);
 
       filteredChurches.forEach((c) => {
         const marker = L.circleMarker([c.latitude, c.longitude], {
@@ -349,7 +345,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         marker.bindTooltip(
           `<div style="font-size: 11px;"><b>✝️ ${c.name}</b><br/>${c.address}, ${c.city}<br/><span style="color:#7c3aed; font-weight:600;">${c.type}</span></div>`,
-          { sticky: true }
+          { sticky: true },
         );
         markers.push(marker);
       });
@@ -372,10 +368,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
     if (showSchools && schools && schools.length > 0) {
       const markers: L.CircleMarker[] = [];
-      const filteredSchools =
-        selectedCounty === 'All'
-          ? schools
-          : schools.filter((s) => s.county === selectedCounty);
+      const filteredSchools = selectedCounty === 'All' ? schools : schools.filter((s) => s.county === selectedCounty);
 
       filteredSchools.forEach((s) => {
         const marker = L.circleMarker([s.latitude, s.longitude], {
@@ -389,7 +382,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         marker.bindTooltip(
           `<div style="font-size: 11px;"><b>🏫 ${s.name}</b><br/>${s.address}, ${s.city}<br/><span style="color:#d97706; font-weight:600;">${s.type}</span></div>`,
-          { sticky: true }
+          { sticky: true },
         );
         markers.push(marker);
       });
@@ -411,6 +404,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() => setShadingMode('severity')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
               shadingMode === 'severity'
@@ -421,6 +415,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             Gap Severity (Red Scale)
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('poverty')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
               shadingMode === 'poverty'
@@ -431,6 +426,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             Poverty Rate
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('snap')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
               shadingMode === 'snap'
@@ -441,6 +437,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             SNAP Rate
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('vehicle')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
               shadingMode === 'vehicle'
@@ -451,6 +448,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             Vehicle Low Access
           </button>
           <button
+            type="button"
             onClick={() => setShadingMode('confidence')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
               shadingMode === 'confidence'
@@ -466,6 +464,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         {/* Retailer Layer Toggle */}
         <button
+          type="button"
           onClick={() => setShowRetailers(!showRetailers)}
           className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
             showRetailers
@@ -479,6 +478,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         {/* Churches Layer Toggle */}
         <button
+          type="button"
           onClick={() => setShowChurches(!showChurches)}
           className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
             showChurches
@@ -492,6 +492,7 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
 
         {/* Schools Layer Toggle */}
         <button
+          type="button"
           onClick={() => setShowSchools(!showSchools)}
           className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
             showSchools
@@ -514,12 +515,12 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
             {shadingMode === 'severity'
               ? 'Gap Severity Legend (FR-02)'
               : shadingMode === 'poverty'
-              ? 'Poverty Rate Legend (FR-03)'
-              : shadingMode === 'snap'
-              ? 'SNAP Participation Rate'
-              : shadingMode === 'vehicle'
-              ? 'No-Vehicle Access Share'
-              : 'Review Tier Legend'}
+                ? 'Poverty Rate Legend (FR-03)'
+                : shadingMode === 'snap'
+                  ? 'SNAP Participation Rate'
+                  : shadingMode === 'vehicle'
+                    ? 'No-Vehicle Access Share'
+                    : 'Review Tier Legend'}
           </span>
         </div>
 
@@ -527,39 +528,27 @@ export const MapLeaflet: React.FC<MapLeafletProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-xs bg-[#991b1b] shrink-0" />
-              <span className="text-slate-700 dark:text-slate-300">
-                Classic food desert (68 tracts)
-              </span>
+              <span className="text-slate-700 dark:text-slate-300">Classic food desert (68 tracts)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-xs bg-[#dc2626] shrink-0" />
-              <span className="text-slate-700 dark:text-slate-300">
-                Vehicle-compounded gap (74-76 tracts)
-              </span>
+              <span className="text-slate-700 dark:text-slate-300">Vehicle-compounded gap (74-76 tracts)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-xs bg-[#f87171] shrink-0" />
-              <span className="text-slate-700 dark:text-slate-300">
-                SNAP enrollment gap (5-6 tracts)
-              </span>
+              <span className="text-slate-700 dark:text-slate-300">SNAP enrollment gap (5-6 tracts)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-xs bg-[#fca5a5] shrink-0 border border-slate-300 dark:border-slate-600" />
-              <span className="text-slate-700 dark:text-slate-300">
-                Possible blind spot
-              </span>
+              <span className="text-slate-700 dark:text-slate-300">Possible blind spot</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-xs bg-[#94a3b8] shrink-0" />
-              <span className="text-slate-700 dark:text-slate-300">
-                Insufficient data (2 tracts)
-              </span>
+              <span className="text-slate-700 dark:text-slate-300">Insufficient data (2 tracts)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-xs bg-slate-200 dark:bg-slate-700 shrink-0" />
-              <span className="text-slate-700 dark:text-slate-300">
-                No gap identified (283 tracts)
-              </span>
+              <span className="text-slate-700 dark:text-slate-300">No gap identified (283 tracts)</span>
             </div>
           </div>
         ) : shadingMode === 'poverty' ? (

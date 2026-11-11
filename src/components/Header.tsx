@@ -1,6 +1,6 @@
-import React from 'react';
-import { MainTab } from '../types';
-import { MapPin, Download, Moon, Sun, Database } from 'lucide-react';
+import { Download, Moon, Sun } from 'lucide-react';
+import type React from 'react';
+import type { MainTab } from '../types';
 
 interface HeaderProps {
   activeTab: MainTab;
@@ -10,13 +10,7 @@ interface HeaderProps {
   onExport: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  activeTab,
-  setActiveTab,
-  isDark,
-  setIsDark,
-  onExport,
-}) => {
+export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, setIsDark, onExport }) => {
   const navTabs: { id: MainTab; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'route', label: 'Food Truck Route' },
@@ -28,12 +22,9 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 flex items-center justify-between gap-4 px-4 md:px-6 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
       {/* Zone 1: Brand title & Official TrackWise Logo */}
       <div className="flex items-center gap-2.5 shrink-0">
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setActiveTab('dashboard');
-          }}
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard')}
           className="flex items-center gap-2 group transition-transform hover:scale-[1.01]"
           title="TrackWise - Food Access, Made Visible"
         >
@@ -42,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
             alt="TrackWise Logo"
             className="h-8 sm:h-9 w-auto object-contain dark:bg-white/90 dark:p-1 dark:rounded-md"
           />
-        </a>
+        </button>
       </div>
 
       {/* Zone 2: Navigation Links */}
@@ -51,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
           const isActive = activeTab === tab.id;
           return (
             <button
+              type="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 transition-colors ${
@@ -68,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Zone 3: Actions */}
       <div className="flex items-center gap-2 shrink-0">
         <button
+          type="button"
           onClick={() => setIsDark(!isDark)}
           aria-label="Toggle theme"
           className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -76,6 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button
+          type="button"
           onClick={onExport}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#a50f15] hover:bg-[#880d12] rounded-md transition-colors whitespace-nowrap shrink-0 shadow-xs"
         >

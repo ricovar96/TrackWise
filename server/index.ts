@@ -1,6 +1,6 @@
 import path from 'node:path';
-import express from 'express';
 import dotenv from 'dotenv';
+import express from 'express';
 import { createApp, createGeminiGenerator } from './app';
 import { loadConfig } from './config';
 import { loadDatasets } from './data';

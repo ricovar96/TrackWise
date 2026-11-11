@@ -1,6 +1,6 @@
 // Suppress browser-extension injected script errors (e.g. chrome-extension:// fetch interceptors)
 window.addEventListener('error', (event) => {
-  if (event.filename && event.filename.startsWith('chrome-extension://')) {
+  if (event.filename?.startsWith('chrome-extension://')) {
     event.preventDefault();
   }
 });
@@ -23,13 +23,20 @@ console.error = (...args: unknown[]) => {
   }
 };
 
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ErrorBoundary } from './components/ErrorBoundary';
 import App from './App.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import 'leaflet/dist/leaflet.css';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>,
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Root element #root not found');
+
+createRoot(rootElement).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </StrictMode>,
 );

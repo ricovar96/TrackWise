@@ -1,5 +1,5 @@
 import type { CountyName, PrimaryGap } from '../src/types';
-import { COUNTIES, GAP_TYPES_WITH_GAP, type AreaStats, type DatasetStats } from './stats';
+import { type AreaStats, COUNTIES, type DatasetStats, GAP_TYPES_WITH_GAP } from './stats';
 
 export const MAX_MESSAGE_LENGTH = 500;
 
@@ -78,7 +78,8 @@ function overview(stats: DatasetStats): string {
 }
 
 function countyProfile(county: CountyName, a: AreaStats): string {
-  const line = (g: PrimaryGap) => `- ${g}: ${plural(a.byGap[g].tracts, 'tract')} (${fmt(a.byGap[g].population)} residents)`;
+  const line = (g: PrimaryGap) =>
+    `- ${g}: ${plural(a.byGap[g].tracts, 'tract')} (${fmt(a.byGap[g].population)} residents)`;
   return [
     `${county} County Food Access Profile:`,
     '',
@@ -107,8 +108,10 @@ function gapSummary(gap: PrimaryGap, stats: DatasetStats): string {
 
 function gapRanking(stats: DatasetStats): string {
   const rows = COUNTIES.map((c) => ({ c, a: stats.counties[c] })).sort((x, y) => y.a.gapTracts - x.a.gapTracts);
+  const top = rows[0];
+  if (!top) return overview(stats);
   return [
-    `${rows[0]!.c} County has the most food access gap tracts overall:`,
+    `${top.c} County has the most food access gap tracts overall:`,
     '',
     ...rows.map(({ c, a }) => `- ${c} County: ${plural(a.gapTracts, 'gap tract')} (${fmt(a.gapPopulation)} residents)`),
     '',
@@ -134,7 +137,10 @@ export function generateAnalyticalFallback(query: string, stats: DatasetStats): 
   const gap = detectGapType(q);
 
   if (wantsRanking && gap && (GAP_TYPES_WITH_GAP as readonly string[]).includes(gap)) {
-    const top = [...COUNTIES].sort((a, b) => stats.counties[b].byGap[gap].tracts - stats.counties[a].byGap[gap].tracts)[0]!;
+    const [top] = [...COUNTIES].sort(
+      (a, b) => stats.counties[b].byGap[gap].tracts - stats.counties[a].byGap[gap].tracts,
+    );
+    if (!top) return overview(stats);
     return `${top} County has the most tracts classified as "${gap}".\n\n${gapSummary(gap, stats)}`;
   }
   if (/\b(most|highest) gap/.test(q) || (wantsRanking && /\bgaps?\b/.test(q))) return gapRanking(stats);

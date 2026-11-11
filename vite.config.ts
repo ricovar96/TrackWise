@@ -1,7 +1,7 @@
+import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
@@ -13,9 +13,7 @@ export default defineConfig(() => {
     },
     define: {
       'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(
-        process.env.VITE_GOOGLE_MAPS_API_KEY ||
-        process.env.GOOGLE_MAPS_API_KEY ||
-        ''
+        process.env.VITE_GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
       ),
     },
     server: {

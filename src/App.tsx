@@ -1,13 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { fetchJson } from './lib/fetchJson';
-import { TractData, RetailerData, ChurchData, SchoolData, CountyFilter, MainTab } from './types';
-import { Header } from './components/Header';
-import { DashboardStoryReport } from './components/DashboardStoryReport';
-import { FoodTruckRouteView } from './components/FoodTruckRouteView';
-import { TractDetailModal } from './components/TractDetailModal';
-import { UploadPortalView } from './components/UploadPortalView';
-import { DataDictionaryView } from './components/DataDictionaryView';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { FloatingAssistant } from './components/FloatingAssistant';
+import { Header } from './components/Header';
+import { TractDetailModal } from './components/TractDetailModal';
+import { fetchJson } from './lib/fetchJson';
+
+const DashboardStoryReport = lazy(() =>
+  import('./components/DashboardStoryReport').then((m) => ({ default: m.DashboardStoryReport })),
+);
+const DataDictionaryView = lazy(() =>
+  import('./components/DataDictionaryView').then((m) => ({ default: m.DataDictionaryView })),
+);
+const FoodTruckRouteView = lazy(() =>
+  import('./components/FoodTruckRouteView').then((m) => ({ default: m.FoodTruckRouteView })),
+);
+const UploadPortalView = lazy(() =>
+  import('./components/UploadPortalView').then((m) => ({ default: m.UploadPortalView })),
+);
+
+function ViewFallback() {
+  return (
+    <div role="status" className="py-24 text-center text-sm text-slate-500">
+      Loading…
+    </div>
+  );
+}
+
+import type { ChurchData, CountyFilter, MainTab, RetailerData, SchoolData, TractData } from './types';
 
 export default function App() {
   const [tracts, setTracts] = useState<TractData[]>([]);
@@ -84,7 +102,10 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div role="alert" className="min-h-screen flex items-center justify-center p-6 text-center bg-[#f8f9fa] dark:bg-slate-950 text-slate-800 dark:text-slate-200">
+      <div
+        role="alert"
+        className="min-h-screen flex items-center justify-center p-6 text-center bg-[#f8f9fa] dark:bg-slate-950 text-slate-800 dark:text-slate-200"
+      >
         <div className="max-w-md space-y-3">
           <h1 className="text-lg font-semibold font-serif">Unable to load data</h1>
           <p className="text-sm">{loadError}</p>
@@ -131,54 +152,51 @@ export default function App() {
 
       {/* 2. Main Body Content Viewports */}
       <main className="flex-1 max-w-[1500px] w-full mx-auto px-4 md:px-6 py-6">
-        {activeTab === 'dashboard' && (
-          <DashboardStoryReport
-            tracts={tracts}
-            retailers={retailers}
-            churches={churches}
-            schools={schools}
-            selectedCounty={selectedCounty}
-            onSelectCounty={setSelectedCounty}
-            selectedTract={selectedTract}
-            onSelectTract={setSelectedTract}
-            mapEngine={mapEngine}
-            setMapEngine={setMapEngine}
-            isDark={isDark}
-          />
-        )}
+        <Suspense fallback={<ViewFallback />}>
+          {activeTab === 'dashboard' && (
+            <DashboardStoryReport
+              tracts={tracts}
+              retailers={retailers}
+              churches={churches}
+              schools={schools}
+              selectedCounty={selectedCounty}
+              onSelectCounty={setSelectedCounty}
+              selectedTract={selectedTract}
+              onSelectTract={setSelectedTract}
+              mapEngine={mapEngine}
+              setMapEngine={setMapEngine}
+              isDark={isDark}
+            />
+          )}
 
-        {/* Tab: Food Truck Route Optimizer */}
-        {activeTab === 'route' && (
-          <FoodTruckRouteView
-            tracts={tracts}
-            churches={churches}
-            schools={schools}
-            selectedCounty={selectedCounty}
-            onSelectCounty={setSelectedCounty}
-            onSelectTract={setSelectedTract}
-            isDark={isDark}
-          />
-        )}
+          {/* Tab: Food Truck Route Optimizer */}
+          {activeTab === 'route' && (
+            <FoodTruckRouteView
+              tracts={tracts}
+              churches={churches}
+              schools={schools}
+              selectedCounty={selectedCounty}
+              onSelectCounty={setSelectedCounty}
+              onSelectTract={setSelectedTract}
+              isDark={isDark}
+            />
+          )}
 
-        {/* Tab: Upload data */}
-        {activeTab === 'portal' && <UploadPortalView />}
+          {/* Tab: Upload data */}
+          {activeTab === 'portal' && <UploadPortalView />}
 
-        {/* Tab: Data dictionary */}
-        {activeTab === 'dictionary' && <DataDictionaryView />}
+          {/* Tab: Data dictionary */}
+          {activeTab === 'dictionary' && <DataDictionaryView />}
+        </Suspense>
       </main>
 
       {/* 3. Slide-over Tract Inspector Drawer */}
-      <TractDetailModal
-        tract={selectedTract}
-        onClose={() => setSelectedTract(null)}
-      />
+      <TractDetailModal tract={selectedTract} onClose={() => setSelectedTract(null)} />
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4 text-xs text-slate-500 transition-colors">
         <div className="max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>
-            Central Florida Food Access Gaps Report · DataKind Beacon Challenge 2 · DevFest Florida 2026
-          </div>
+          <div>Central Florida Food Access Gaps Report · DataKind Beacon Challenge 2 · DevFest Florida 2026</div>
           <div className="flex items-center gap-3">
             <span>Orange, Osceola, Seminole &amp; Lake Counties (490 Tracts)</span>
             <span aria-hidden="true">·</span>

@@ -1,4 +1,4 @@
-import { TractData, PrimaryGap, SecondaryGap, ConfidenceLevel, ReviewTier } from '../types';
+import type { ConfidenceLevel, PrimaryGap, ReviewTier, SecondaryGap, TractData } from '../types';
 
 export interface ScenarioParams {
   povertyDeltaPct: number; // e.g. -20 to +40%
@@ -46,7 +46,13 @@ export const REQUIRED_SCHEMAS: Record<string, { label: string; requiredCols: str
   },
   sram_straight: {
     label: 'USDA SRAM (Straight Line Distance)',
-    requiredCols: ['CensusTract20', 'SD_SRAM_LILATracts_halfAnd10', 'SD_SRAM_LA1and10', 'SD_SRAM_LILATracts_Vehicle', 'SD_SRAM_lahunv1share'],
+    requiredCols: [
+      'CensusTract20',
+      'SD_SRAM_LILATracts_halfAnd10',
+      'SD_SRAM_LA1and10',
+      'SD_SRAM_LILATracts_Vehicle',
+      'SD_SRAM_lahunv1share',
+    ],
   },
   sram_general: {
     label: 'USDA SRAM (General Tract Characteristics)',
@@ -79,14 +85,14 @@ export function calculateRankQuartile(sortedValues: number[], value: number | nu
 export function classifyTractGaps(
   povertyRate: number | null,
   povertyQ: number | null,
-  snapRate: number | null,
+  _snapRate: number | null,
   snapQ: number | null,
-  noVehicleShare: number,
+  _noVehicleShare: number,
   vehicleQ: number | null,
   lilaFlag: number,
   lowAccessFlag: number,
   noVehicleLowAccessFlag: number,
-  population: number
+  population: number,
 ): { primaryGap: PrimaryGap; secondaryGap: SecondaryGap; allMatchingGaps: string[] } {
   const matches: string[] = [];
 
@@ -105,10 +111,7 @@ export function classifyTractGaps(
   }
 
   // Order 3: Vehicle-compounded gap
-  if (
-    lowAccessFlag === 1 &&
-    (noVehicleLowAccessFlag === 1 || vehicleQ === 4)
-  ) {
+  if (lowAccessFlag === 1 && (noVehicleLowAccessFlag === 1 || vehicleQ === 4)) {
     matches.push('Vehicle-compounded gap');
   }
 
@@ -119,16 +122,13 @@ export function classifyTractGaps(
 
   // Order 5: Possible blind spot
   const hasAnyQ4 = povertyQ === 4 || snapQ === 4 || vehicleQ === 4;
-  const q3Count =
-    (povertyQ === 3 ? 1 : 0) + (snapQ === 3 ? 1 : 0) + (vehicleQ === 3 ? 1 : 0);
+  const q3Count = (povertyQ === 3 ? 1 : 0) + (snapQ === 3 ? 1 : 0) + (vehicleQ === 3 ? 1 : 0);
   if (!hasAnyQ4 && q3Count >= 2) {
     matches.push('Possible blind spot');
   }
 
-  const primaryGap: PrimaryGap =
-    matches.length > 0 ? (matches[0] as PrimaryGap) : 'No gap identified';
-  const secondaryGap: SecondaryGap =
-    matches.length > 1 ? (matches[1] as SecondaryGap) : null;
+  const primaryGap: PrimaryGap = matches.length > 0 ? (matches[0] as PrimaryGap) : 'No gap identified';
+  const secondaryGap: SecondaryGap = matches.length > 1 ? (matches[1] as SecondaryGap) : null;
 
   return { primaryGap, secondaryGap, allMatchingGaps: matches };
 }
@@ -144,7 +144,7 @@ export function scoreConfidence(
   primaryGap: PrimaryGap,
   secondaryGap: SecondaryGap,
   snapRate?: number | null,
-  snapMoe?: number | null
+  snapMoe?: number | null,
 ): { score: number; confidence: ConfidenceLevel; reviewTier: ReviewTier; moeRationale: string } {
   let score = 0;
   const rationales: string[] = [];
@@ -236,10 +236,7 @@ export interface SensitivityResult {
 /**
  * Tests classification stability under small threshold shifts (+/- 5%, +/- 10%, etc.)
  */
-export function runSensitivityTest(
-  tracts: TractData[],
-  thresholdShiftPct: number
-): SensitivityResult {
+export function runSensitivityTest(tracts: TractData[], thresholdShiftPct: number): SensitivityResult {
   const shiftMultiplier = 1 + thresholdShiftPct / 100;
 
   // Extract distributions
@@ -278,7 +275,8 @@ export function runSensitivityTest(
     let shiftedGap: PrimaryGap = 'No gap identified';
 
     const povMatch = t.poverty_rate !== null && t.poverty_rate >= povQ4Cutoff;
-    const vehMatch = t.low_access_flag === 1 && (t.no_vehicle_low_access_flag === 1 || t.no_vehicle_low_access_pct >= vehQ4Cutoff);
+    const vehMatch =
+      t.low_access_flag === 1 && (t.no_vehicle_low_access_flag === 1 || t.no_vehicle_low_access_pct >= vehQ4Cutoff);
     const snapMatch = povMatch && t.snap_rate !== null && t.snap_rate <= snapMedianCutoff;
 
     if (povMatch && t.lila_flag === 1) {
@@ -292,7 +290,7 @@ export function runSensitivityTest(
       const nearPov = t.poverty_rate !== null && t.poverty_rate >= povQ4Cutoff * 0.7;
       const nearVeh = t.no_vehicle_low_access_pct >= vehQ4Cutoff * 0.7;
       const nearSnap = t.snap_rate !== null && t.snap_rate >= snapMedianCutoff * 0.7;
-      let q3Count = (nearPov ? 1 : 0) + (nearVeh ? 1 : 0) + (nearSnap ? 1 : 0);
+      const q3Count = (nearPov ? 1 : 0) + (nearVeh ? 1 : 0) + (nearSnap ? 1 : 0);
       if (q3Count >= 2 && !povMatch) {
         shiftedGap = 'Possible blind spot';
       }
@@ -338,10 +336,7 @@ export function runSensitivityTest(
  * - 75th percentile of no-vehicle low-access share (~0.49)
  * - Median SNAP rate (~11.3%)
  */
-export function runScenarioModel(
-  tracts: TractData[],
-  params: ScenarioParams
-): ScenarioResult {
+export function runScenarioModel(tracts: TractData[], params: ScenarioParams): ScenarioResult {
   const povMultiplier = 1 + params.povertyDeltaPct / 100;
   const vehMultiplier = 1 + params.vehicleDeltaPct / 100;
 
@@ -432,7 +427,7 @@ export function validateCsvHeader(
   fileKey: string,
   fileName: string,
   headers: string[],
-  rowCount: number
+  rowCount: number,
 ): FileValidationResult {
   const schema = REQUIRED_SCHEMAS[fileKey];
   if (!schema) {

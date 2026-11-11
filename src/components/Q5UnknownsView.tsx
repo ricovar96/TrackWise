@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { TractData } from '../types';
-import { AlertTriangle, HelpCircle, FileText, CheckCircle2, ShieldAlert, ChevronRight } from 'lucide-react';
+import { AlertTriangle, FileText, HelpCircle, ShieldAlert } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
+import type { TractData } from '../types';
 
 interface Q5UnknownsViewProps {
   tracts: TractData[];
@@ -27,36 +28,46 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
     {
       title: 'CDC PLACES Transportation Measures Blank for Central Florida',
       category: 'Assumption & Data Void',
-      impact: 'The CDC PLACES 2025 dataset lacks transport measures for Orange, Osceola, Seminole, and Lake county census tracts.',
-      mitigation: 'Substituted USDA SRAM vehicle access indicators (households without vehicle and no-vehicle low-access share). Review when CDC releases updated Florida measures.',
+      impact:
+        'The CDC PLACES 2025 dataset lacks transport measures for Orange, Osceola, Seminole, and Lake county census tracts.',
+      mitigation:
+        'Substituted USDA SRAM vehicle access indicators (households without vehicle and no-vehicle low-access share). Review when CDC releases updated Florida measures.',
       status: 'Active Substitution',
     },
     {
       title: 'Euclidean (Straight-Line) Distance to SNAP Stores',
       category: 'Physical Barrier Risk',
-      impact: 'Straight-line distance understates travel barriers where major highways (I-4, SR-408, SR-417, Florida Turnpike) or rail corridors divide neighborhoods from grocery stores.',
-      mitigation: 'Validate top-ranked vehicle-gap tracts through ground field checks and local bus transit route mapping before establishing physical sites.',
+      impact:
+        'Straight-line distance understates travel barriers where major highways (I-4, SR-408, SR-417, Florida Turnpike) or rail corridors divide neighborhoods from grocery stores.',
+      mitigation:
+        'Validate top-ranked vehicle-gap tracts through ground field checks and local bus transit route mapping before establishing physical sites.',
       status: 'Field Check Required',
     },
     {
       title: 'Survey Sampling Uncertainty (Wide Margins of Error)',
       category: 'Statistical Variance',
-      impact: 'Census ACS survey estimates carry wide margins of error (MOE > 30% of estimate) in small residential census tracts.',
-      mitigation: 'Confidence scoring (4-point rubric) and review tiers (Tier 1, Tier 2, Review Required) prevent premature capital investment in borderline tracts.',
+      impact:
+        'Census ACS survey estimates carry wide margins of error (MOE > 30% of estimate) in small residential census tracts.',
+      mitigation:
+        'Confidence scoring (4-point rubric) and review tiers (Tier 1, Tier 2, Review Required) prevent premature capital investment in borderline tracts.',
       status: 'Enforced by Review Tiers',
     },
     {
       title: 'USDA Food Access Vintage & Boundary Standards',
       category: 'Temporal Vintage',
-      impact: 'USDA Food Access Research Atlas and SRAM datasets use 2020 tract definitions and July 2026 retailer snapshots.',
-      mitigation: 'The automated upload portal versioning architecture enables re-running the gap engine as Census and USDA publish fresh annual vintages.',
+      impact:
+        'USDA Food Access Research Atlas and SRAM datasets use 2020 tract definitions and July 2026 retailer snapshots.',
+      mitigation:
+        'The automated upload portal versioning architecture enables re-running the gap engine as Census and USDA publish fresh annual vintages.',
       status: 'Version Controlled',
     },
     {
       title: 'SNAP Retailer Inventory Quality & Operating Hours',
       category: 'Retail Quality Void',
-      impact: 'USDA retailer list includes convenience stores and gas stations that accept EBT but offer minimal fresh fruits, vegetables, or nutritious perishables.',
-      mitigation: 'Recommend partnering with full-service grocers, mobile farmers markets, and food bank distribution trucks.',
+      impact:
+        'USDA retailer list includes convenience stores and gas stations that accept EBT but offer minimal fresh fruits, vegetables, or nutritious perishables.',
+      mitigation:
+        'Recommend partnering with full-service grocers, mobile farmers markets, and food bank distribution trucks.',
       status: 'Qualitative Check',
     },
   ];
@@ -69,7 +80,9 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
           What Don't We Know? (Data Gaps & Uncertainty)
         </h2>
         <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
-          High-confidence decisions require knowing where the data is uncertain. This view surfaces statistical blind spots, tracts where Census survey margins of error are wide, and explicit data substitutions made across Central Florida.
+          High-confidence decisions require knowing where the data is uncertain. This view surfaces statistical blind
+          spots, tracts where Census survey margins of error are wide, and explicit data substitutions made across
+          Central Florida.
         </p>
       </div>
 
@@ -80,9 +93,7 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
             <span className="text-xs font-semibold">Possible Blind Spots</span>
             <AlertTriangle className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-            {blindSpots.length}
-          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">{blindSpots.length}</div>
           <p className="text-[11px] text-slate-500 mt-1">
             Tracts with multiple elevated Q3 signals without a single Q4 trigger (~315,000 residents).
           </p>
@@ -160,7 +171,9 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
                       {c} County
                     </td>
                     <td className="py-2.5 px-3 text-right">{cTracts.length}</td>
-                    <td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400 font-semibold">{bCount}</td>
+                    <td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400 font-semibold">
+                      {bCount}
+                    </td>
                     <td className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400">{wCount}</td>
                     <td className="py-2.5 px-3 text-right text-slate-400">{iCount}</td>
                     <td className="py-2.5 px-4 text-right font-bold text-slate-900 dark:text-slate-100">{rCount}</td>
@@ -186,6 +199,7 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
 
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs">
             <button
+              type="button"
               onClick={() => setFilterType('all')}
               className={`px-2.5 py-1 rounded-md transition-colors ${
                 filterType === 'all'
@@ -196,6 +210,7 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
               All Uncertain ({displayedTracts.length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterType('blind_spot')}
               className={`px-2.5 py-1 rounded-md transition-colors ${
                 filterType === 'blind_spot'
@@ -206,6 +221,7 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
               Blind Spots ({blindSpots.length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterType('wide_moe')}
               className={`px-2.5 py-1 rounded-md transition-colors ${
                 filterType === 'wide_moe'
@@ -216,6 +232,7 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
               Wide MOE ({wideMoeTracts.length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterType('insufficient')}
               className={`px-2.5 py-1 rounded-md transition-colors ${
                 filterType === 'insufficient'
@@ -248,11 +265,15 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
                 >
                   <td className="py-2 px-4">
                     <span className="font-semibold text-slate-900 dark:text-slate-100">{t.tract_name}</span>
-                    <span className="text-[11px] text-slate-500 block">{t.county} County · {t.GEOID}</span>
+                    <span className="text-[11px] text-slate-500 block">
+                      {t.county} County · {t.GEOID}
+                    </span>
                   </td>
                   <td className="py-2 px-3 text-right font-mono tabular-nums">{t.population.toLocaleString()}</td>
                   <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {t.poverty_rate !== null ? `${t.poverty_rate.toFixed(1)}% ±${t.poverty_rate_moe?.toFixed(1) || '0'}%` : 'N/A'}
+                    {t.poverty_rate !== null
+                      ? `${t.poverty_rate.toFixed(1)}% ±${t.poverty_rate_moe?.toFixed(1) || '0'}%`
+                      : 'N/A'}
                   </td>
                   <td className="py-2 px-3">
                     <span
@@ -260,16 +281,14 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
                         t.primary_gap === 'Possible blind spot'
                           ? 'text-amber-600 dark:text-amber-400'
                           : t.primary_gap === 'Insufficient data'
-                          ? 'text-slate-400'
-                          : 'text-red-600 dark:text-red-400'
+                            ? 'text-slate-400'
+                            : 'text-red-600 dark:text-red-400'
                       }`}
                     >
                       {t.primary_gap}
                     </span>
                   </td>
-                  <td className="py-2 px-4 text-slate-600 dark:text-slate-400 text-[11px]">
-                    {t.unknown_reason}
-                  </td>
+                  <td className="py-2 px-4 text-slate-600 dark:text-slate-400 text-[11px]">{t.unknown_reason}</td>
                 </tr>
               ))}
             </tbody>
@@ -294,9 +313,7 @@ export const Q5UnknownsView: React.FC<Q5UnknownsViewProps> = ({ tracts, onSelect
                 </span>
                 <span className="text-[11px] font-mono text-slate-500">{lim.status}</span>
               </div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {lim.title}
-              </h4>
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100">{lim.title}</h4>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 <b className="text-slate-700 dark:text-slate-300">Known Limit:</b> {lim.impact}
               </p>
