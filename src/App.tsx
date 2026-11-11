@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchJson } from './lib/fetchJson';
 import { TractData, RetailerData, ChurchData, SchoolData, CountyFilter, MainTab } from './types';
 import { Header } from './components/Header';
 import { DashboardStoryReport } from './components/DashboardStoryReport';
@@ -20,6 +21,7 @@ export default function App() {
   const [gmpQuotaExceeded, setGmpQuotaExceeded] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Client-side quota exceeded event listener (Section 8 Case A)
   useEffect(() => {
@@ -39,23 +41,29 @@ export default function App() {
 
   // Load tracts, retailers, churches, and schools from public/data
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
     Promise.all([
-      fetch('/data/central_florida_food_gaps.json').then((res) => res.json()),
-      fetch('/data/central_florida_snap_retailers.json').then((res) => res.json()),
-      fetch('/data/central_florida_churches.json').then((res) => res.json()).catch(() => []),
-      fetch('/data/central_florida_schools.json').then((res) => res.json()).catch(() => []),
+      fetchJson<TractData[]>('/data/central_florida_food_gaps.json', { signal }),
+      fetchJson<RetailerData[]>('/data/central_florida_snap_retailers.json', { signal }),
+      // Community sites are optional overlays: the report still works without them.
+      fetchJson<ChurchData[]>('/data/central_florida_churches.json', { signal }).catch(() => [] as ChurchData[]),
+      fetchJson<SchoolData[]>('/data/central_florida_schools.json', { signal }).catch(() => [] as SchoolData[]),
     ])
       .then(([tractsData, retailersData, churchesData, schoolsData]) => {
         setTracts(tractsData);
         setRetailers(retailersData);
-        setChurches(churchesData || []);
-        setSchools(schoolsData || []);
+        setChurches(churchesData);
+        setSchools(schoolsData);
         setIsLoading(false);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
+        if (signal.aborted) return;
         console.error('Failed to load datasets:', err);
+        setLoadError('The food access datasets could not be loaded. Check your connection and try again.');
         setIsLoading(false);
       });
+    return () => controller.abort();
   }, []);
 
   // Global CSV export
@@ -69,6 +77,24 @@ export default function App() {
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-[#a50f15] border-t-transparent rounded-full animate-spin" />
           <div className="text-sm font-medium font-serif">Loading Central Florida Food Access Report...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div role="alert" className="min-h-screen flex items-center justify-center p-6 text-center bg-[#f8f9fa] dark:bg-slate-950 text-slate-800 dark:text-slate-200">
+        <div className="max-w-md space-y-3">
+          <h1 className="text-lg font-semibold font-serif">Unable to load data</h1>
+          <p className="text-sm">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded bg-[#a50f15] text-white text-sm font-medium"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

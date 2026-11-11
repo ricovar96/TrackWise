@@ -1,27 +1,28 @@
 import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  getDoc,
-  writeBatch
-} from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+
+// Firebase web config is an identifier, not a secret (access is enforced by firestore.rules),
+// but it is still kept out of source control so each environment can point at its own project.
+const env = import.meta.env;
+const firebaseConfig = {
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = env.VITE_FIREBASE_DATABASE_ID ? getFirestore(app, env.VITE_FIREBASE_DATABASE_ID) : getFirestore(app);
 
-// Test Firestore database connection
+/** Resolves true if the `summary_metrics/All` document can be read. */
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
-    const testDocRef = doc(db, 'summary_metrics', 'All');
-    await getDoc(testDocRef);
-    console.log('Firebase Firestore database connection verified.');
+    await getDoc(doc(db, 'summary_metrics', 'All'));
     return true;
   } catch (error) {
-    console.warn('Firestore connection check warning:', error);
+    console.warn('Firestore connection check failed:', error);
     return false;
   }
 }

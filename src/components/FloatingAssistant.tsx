@@ -68,7 +68,7 @@ export const FloatingAssistant: React.FC = () => {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -90,22 +90,11 @@ export const FloatingAssistant: React.FC = () => {
       };
 
       setMessages((prev) => [...prev, botMsg]);
-    } catch (err: any) {
-      // Fallback message if network or timeout occurs
-      const isAbort = err.name === 'AbortError';
+    } catch (err: unknown) {
+      const isAbort = err instanceof DOMException && err.name === 'AbortError';
       const fallbackText = isAbort
-        ? `Central Florida Food Access Overview:
-
-- Total census tracts evaluated: 490 tracts across 4 counties
-- Total regional population: 2,429,919 residents
-- Total food gap tracts: 149 tracts (948,632 residents)
-- Classic food deserts: 68 tracts (443,622 residents)
-- Vehicle-compounded gaps: 76 primary tracts (697,700 residents)
-- SNAP enrollment gaps: 5 primary tracts (63,000 residents)
-- Possible blind spots: 58 tracts (332,800 residents)
-- No gap identified: 281 tracts (1,481,287 residents)
-- Community sites: 1,697 SNAP stores, 40 church pantries, 35 school meal sites`
-        : 'Unable to connect to the assistant server. Showing cached dataset numbers.';
+        ? 'The assistant took too long to respond. Please try again.'
+        : 'Unable to reach the assistant right now. Please try again in a moment.';
 
       const errorMsg: ChatMessage = {
         id: `bot-err-${Date.now()}`,
